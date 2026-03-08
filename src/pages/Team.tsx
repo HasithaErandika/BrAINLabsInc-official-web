@@ -18,7 +18,7 @@ const MemberCard = ({ member, idx, past = false }: { member: TeamMember; idx: nu
         transition={{ delay: idx * 0.07, duration: 0.5 }}
         whileHover={{ y: -5 }}
     >
-        <Card className={`h-full border-border/50 hover:shadow-lg transition-all duration-300 group ${past ? 'bg-card/50 opacity-75 hover:opacity-100' : 'bg-card/80 hover:border-primary/40'}`}>
+        <Card className={`h-full border-border/50 hover:shadow-lg transition-all duration-300 group ${past ? 'bg-card/40' : 'bg-card/80 hover:border-primary/40'}`}>
             <CardHeader className="pb-3 pt-6 px-6">
                 <div className="flex items-start gap-4">
                     {/* Avatar */}
@@ -27,10 +27,10 @@ const MemberCard = ({ member, idx, past = false }: { member: TeamMember; idx: nu
                             <img
                                 src={member.image}
                                 alt={member.name}
-                                className={`w-16 h-16 rounded-2xl object-cover ring-2 transition-all duration-300 ${past ? 'ring-border grayscale group-hover:grayscale-0' : 'ring-border group-hover:ring-primary/40'}`}
+                                className={`w-16 h-16 rounded-2xl object-cover ring-2 transition-all duration-300 ${past ? 'ring-border group-hover:ring-primary/40' : 'ring-border group-hover:ring-primary/40'}`}
                             />
                         ) : (
-                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ring-1 ring-border transition-all ${past ? 'bg-muted/60' : 'bg-gradient-to-br from-primary/15 to-primary/5 group-hover:ring-primary/30'}`}>
+                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ring-1 ring-border transition-all ${past ? 'bg-gradient-to-br from-primary/10 to-primary/5 group-hover:ring-primary/30' : 'bg-gradient-to-br from-primary/15 to-primary/5 group-hover:ring-primary/30'}`}>
                                 <span className={`text-xl font-bold ${past ? 'text-muted-foreground/60' : 'text-primary/80'}`}>
                                     {member.name.split(' ').map(n => n[0]).join('')}
                                 </span>
@@ -39,10 +39,10 @@ const MemberCard = ({ member, idx, past = false }: { member: TeamMember; idx: nu
                     </div>
 
                     <div className="flex-1 min-w-0 pt-0.5">
-                        <CardTitle className={`text-base font-semibold mb-1 transition-colors leading-snug ${past ? 'text-muted-foreground group-hover:text-foreground' : 'group-hover:text-primary'}`}>
+                        <CardTitle className={`text-base font-semibold mb-1 transition-colors leading-snug group-hover:text-primary`}>
                             {member.name}
                         </CardTitle>
-                        <CardDescription className={`text-xs font-semibold mb-0.5 uppercase tracking-wide ${past ? 'text-muted-foreground/70' : 'text-primary'}`}>
+                        <CardDescription className={`text-xs font-semibold mb-0.5 uppercase tracking-wide text-primary`}>
                             {member.position}
                         </CardDescription>
                         <p className="text-xs text-muted-foreground/80 truncate">{member.university}</p>
@@ -61,7 +61,7 @@ const MemberCard = ({ member, idx, past = false }: { member: TeamMember; idx: nu
                             <Badge
                                 key={i}
                                 variant="secondary"
-                                className={`text-[10px] px-2 py-0.5 font-medium border transition-colors cursor-default ${past ? 'bg-muted/60 text-muted-foreground border-border/50' : 'bg-primary/6 text-foreground/80 hover:bg-primary/12 hover:text-primary border-primary/10 hover:border-primary/25'}`}
+                                className={`text-[10px] px-2 py-0.5 font-medium border transition-colors cursor-default bg-primary/6 text-foreground/80 hover:bg-primary/12 hover:text-primary border-primary/10 hover:border-primary/25`}
                             >
                                 {interest}
                             </Badge>
@@ -199,9 +199,9 @@ export const Team = () => {
                             viewport={{ once: true }}
                             className="flex items-center gap-3 mb-8"
                         >
-                            <span className="w-2 h-2 rounded-full bg-muted-foreground/50" />
-                            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-muted-foreground">Past Members</h2>
-                            <span className="ml-1 text-xs text-muted-foreground font-medium bg-muted border border-border/60 px-2 py-0.5 rounded-full">
+                            <span className="w-2 h-2 rounded-full bg-foreground" />
+                            <h2 className="text-xl md:text-2xl font-bold tracking-tight">Former Members</h2>    {/*Changed "Past" to "Former"*/}
+                            <span className="ml-1 text-xs font-medium border border-border/60 px-2 py-0.5 rounded-full">
                                 {pastMembers.length}
                             </span>
                         </motion.div>
