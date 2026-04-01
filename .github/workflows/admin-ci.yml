@@ -1,0 +1,39 @@
+name: Admin CI
+
+on:
+  push:
+    branches: [ main, development ]
+    paths:
+      - 'admin/**'
+  pull_request:
+    branches: [ main, development ]
+    paths:
+      - 'admin/**'
+
+jobs:
+  build-and-lint:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: admin
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Lint
+        run: npm run lint
+        continue-on-error: true # Allow for now while sorting the codebase
+
+      - name: Run Build
+        run: npm run build

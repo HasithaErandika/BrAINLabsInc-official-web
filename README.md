@@ -1,57 +1,85 @@
-# BrAIN Labs Inc.
+# BrAIN Labs Inc. Official Platform
 
-## Brain-Inspired AI and Neuroinformatics Lab
+## 🧠 Brain-Inspired AI and Neuroinformatics Lab
 
-Welcome to BrAINLabs Inc. We are a research laboratory dedicated to exploring the intersection of Artificial Intelligence (AI), Machine Learning (ML), and Neuroscience. Our mission is to develop innovative AI solutions that address the complex challenges of the 21st century. At the core of our research, we draw inspiration from nature to create AI systems that are both explainable and efficient.
+Welcome to the **BrAIN Labs Inc.** official ecosystem. This repository contains the source code for our research platform, including the administrative console and the core research API.
 
-## Mission Statement
+---
 
-At BrAINLabs, we strive to explore the intricate relationship between artificial intelligence and the neuroscience of the human brain. By harnessing the latest advancements in technology and research, we aim to:
+## 🚀 System Overview
 
-*   Develop intelligent systems that are interpretable and efficient.
-*   Enhance the understanding of neural mechanisms through computational modeling.
-*   Provide specialized industry services and consultation.
+The platform is designed to facilitate research collaboration, content moderation, and public visibility for our lab's initiatives in **Large Language Models (LLM)** and **Neuromorphic Computing**.
 
-## Research Areas
+### 🛠️ Technology Stack
 
-Our research is primarily focused on two key domains:
+- **Frontend**: React 18, Vite, Tailwind CSS, Lucide Icons.
+- **Backend**: Node.js, Express.js (Restful API).
+- **Database**: PostgreSQL (Managed by Supabase).
+- **Auth**: Supabase Auth + Custom JWT Authorization.
 
-### Large Language Models (LLM)
+---
 
-We are developing advanced deep learning models that simulate brain activity to aid researchers in understanding neural dynamics.
+## 📂 Project Structure
 
-*   **Optimized Compression for Transformers**: Designing efficient techniques to reduce the size and computational requirements of transformer-based models while maintaining accuracy. This work focuses on model pruning, quantization, and compression methods to enhance scalability on resource-constrained systems.
-*   **Security and Privacy of LLM**: Investigating vulnerabilities in large language models and developing robust solutions to mitigate risks, including adversarial attacks, data leakage, and model misuse.
-*   **Applications of LLM for Cybersecurity**: Utilizing the advanced reasoning and pattern recognition capabilities of LLMs to detect and mitigate cyber threats, including automated threat intelligence and secure coding recommendations.
+```text
+BrAINLabsInc/
+├── admin/          # Admin Console (React + Vite)
+├── backend/        # Express.js API & Database Seeds
+├── docs/           # System Documentation
+├── web/            # Legacy Landing Page (Cloudflare)
+├── schema(2).sql   # Canonical Database Schema
+└── README.md       # High-level project entry point
+```
 
-### Neuromorphic Computing
+---
 
-We utilize machine learning techniques to analyze neuroimaging data for the early detection and understanding of neurological disorders.
+## ⚙️ Getting Started
 
-*   **Learning Algorithms for Spiking Neural Networks (SNN)**: Developing algorithms tailored to SNNs which emulate biological neuron spiking. These focus on event-driven learning paradigms for real-time processing with low energy consumption.
-*   **Applications of SNN**: Exploring the use of SNNs in robotics, prosthetics, and neuromorphic hardware to enable adaptive, low-power solutions for real-world problems.
+### 1. Prerequisites
+- **Node.js** (v18+)
+- **Supabase Account** (with a project initialized)
 
-## Team
+### 2. Backend Setup
+Navigate to the `backend/` directory:
+```bash
+cp .env.example .env
+npm install
+npm run dev
+```
+Initialize the database using `schema(2).sql` in the Supabase SQL editor and run the admin seeder:
+```bash
+node seed-admin.js
+```
 
-Our lab consists of a multidisciplinary team of researchers and graduate students from the Sri Lanka Institute of Information Technology (SLIIT) and other prestigious institutions. We are committed to pushing the boundaries of AI and neuroscience research.
+### 3. Admin Console Setup
+Navigate to the `admin/` directory:
+```bash
+cp .env.example .env
+npm install
+npm run dev
+```
 
-## Contact
+---
 
-For collaborations, inquiries, or more information, please visit our website or contact us directly.
+## 📚 Documentation
 
-**Email**: info@brainlabs.inc
+Detailed documentation is available in the [docs/](file:///home/hasithaerandika/Documents/Projects/BrAINLabsInc/docs) directory:
+
+- [System Architecture](file:///home/hasithaerandika/Documents/Projects/BrAINLabsInc/docs/architecture.md)
+- [API Reference](file:///home/hasithaerandika/Documents/Projects/BrAINLabsInc/docs/api.md)
+- [Database Schema](file:///home/hasithaerandika/Documents/Projects/BrAINLabsInc/docs/database.md)
+- [Auth Flow](file:///home/hasithaerandika/Documents/Projects/BrAINLabsInc/docs/auth-flow.md)
+- [Deployment Guide](file:///home/hasithaerandika/Documents/Projects/BrAINLabsInc/docs/deployment.md)
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions from our multidisciplinary team! Please refer to the [CONTRIBUTING.md](file:///home/hasithaerandika/Documents/Projects/BrAINLabsInc/CONTRIBUTING.md) for our workflow and coding standards.
+
+**Contact**: info@brainlabs.inc
 **GitHub**: [https://github.com/BrAINLabs-Inc](https://github.com/BrAINLabs-Inc)
 
-## Deployment
+---
 
-To deploy this project to Cloudflare Pages:
-
-1.  **Build**:
-    ```bash
-    npm run build
-    ```
-2.  **Deploy**:
-    ```bash
-    npm run deploy
-    ```
-    This command uses `wrangler` to deploy the `dist` folder.
+© 2026 BrAIN Labs Inc. All rights reserved.

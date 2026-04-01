@@ -1,97 +1,52 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// useAuth.ts — Global auth store.
-// ALL authentication goes through the Ballerina backend. No direct Supabase SDK.
+// useAuth.ts — Global auth store using zustand.
 // ─────────────────────────────────────────────────────────────────────────────
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
-const BASE_URL = import.meta.env.VITE_API_URL ?? "";
+import { apiClient } from "../lib/api";
+import type { MemberRole, ApprovalStatus } from "../lib/api";
 
 export interface AuthUser {
-  id: string; // Ensure id is present or correctly handled.
-  name: string;
+  id: number;
+  first_name: string;
+  second_name: string;
   email: string;
-  avatar: string;
   slug: string;
-  position?: string;
+  role: MemberRole;
+  approval_status: ApprovalStatus | null;
 }
 
 interface AuthState {
   token: string | null;
-  role: "super_admin" | "researcher" | null;
   user: AuthUser | null;
-  status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | null;
   loginWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
-  setSession: (token: string, role: "super_admin" | "researcher" | null, user: AuthUser, status: any) => void;
   updateUser: (updates: Partial<AuthUser>) => void;
   logout: () => void;
   isAdmin: () => boolean;
   isResearcher: () => boolean;
+  isAssistant: () => boolean;
+  refreshUser: () => Promise<void>;
 }
 
 export const useAuth = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
-      role: null,
-      status: null,
       token: null,
 
-      /**
-       * Authenticate via the Ballerina /auth/login endpoint.
-       * The backend calls Supabase Auth and returns a JWT + member profile.
-       */
       loginWithEmail: async (email: string, password: string) => {
         try {
-          const res = await fetch(`${BASE_URL}/auth/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-          });
+          const res = await apiClient.post("/auth/login", { email, password });
+          const { token, user } = res.data;
 
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({ message: "Login failed" }));
-            return { error: err.message ?? "Invalid credentials" };
-          }
+          // Store token explicitly for the apiClient interceptor
+          localStorage.setItem('brain_labs_token', token);
 
-          const data = await res.json() as {
-            token: string;
-            member: {
-              id: string;
-              name: string;
-              contact_email?: string;
-              image_url?: string;
-              slug: string;
-              role: string;
-              status: string;
-              position?: string;
-            };
-          };
-
-          const role = data.member.role === "super_admin" ? "super_admin" : "researcher";
-
-          set({
-            token: data.token,
-            role,
-            status: data.member.status as any,
-            user: {
-              id: data.member.id,
-              name: data.member.name,
-              email: data.member.contact_email ?? email,
-              avatar: data.member.image_url ?? "",
-              slug: data.member.slug,
-              position: data.member.position,
-            },
-          });
-
+          set({ token, user });
           return { error: null };
         } catch (err: any) {
-          return { error: err.message ?? "Network error. Please try again." };
+          return { error: err.response?.data?.error || err.message || "Login failed" };
         }
-      },
-
-      setSession: (token, role, user, status) => {
-        set({ token, role, user, status });
       },
 
       updateUser: (updates) => {
@@ -101,20 +56,25 @@ export const useAuth = create<AuthState>()(
       },
 
       logout: () => {
-        set({ user: null, role: null, token: null, status: null });
+        localStorage.removeItem('brain_labs_token');
+        set({ user: null, token: null });
       },
 
-      isAdmin: () => get().role === "super_admin",
-      isResearcher: () => get().role === "researcher",
+      isAdmin: () => get().user?.role === "admin",
+      isResearcher: () => get().user?.role === "researcher",
+      isAssistant: () => get().user?.role === "research_assistant",
+
+      refreshUser: async () => {
+        try {
+          const res = await apiClient.get("/me");
+          set({ user: res.data });
+        } catch (err) {
+          console.error("Failed to refresh user", err);
+        }
+      },
     }),
     {
-      name: "bl_admin_session",
-      partialize: (state) => ({
-        token: state.token,
-        role: state.role,
-        user: state.user,
-        status: state.status,
-      }),
+      name: "brain_labs_auth",
     }
   )
 );

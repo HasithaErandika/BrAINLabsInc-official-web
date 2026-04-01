@@ -1,340 +1,205 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// api.ts — All frontend-to-backend API calls. fetch() only. No Supabase SDK.
-// Types match schema.sql exactly.
+// api.ts — Custom Axios instance for BrAIN Labs frontend-to-backend API calls.
+// Defines new types aligned with schema(2).sql and Express API endpoints.
 // ─────────────────────────────────────────────────────────────────────────────
-const BASE_URL = import.meta.env.VITE_API_URL ?? "";
+import axios from 'axios';
 
-// ─── Types (mirror of schema.sql) ────────────────────────────────────────────
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
 
-export interface Member {
-  id?: string;
-  auth_user_id?: string;
+export const apiClient = axios.create({
+  baseURL: BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Interceptor to inject Bearer token
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('brain_labs_token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// ─── Types (aligned to schema(2).sql) ────────────────────────────────────────
+
+export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type MemberRole = 'admin' | 'researcher' | 'research_assistant' | 'pending';
+
+export interface BaseMember {
+  id: number;
+  first_name: string;
+  second_name: string;
+  contact_email: string;
   slug: string;
-  name: string;
-  position?: string;
-  university?: string;
-  country?: string;
-  contact_email?: string;
-  linkedin_url?: string;
-  image_url?: string;
-  summary?: string;
-  status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED";
-  role?: "super_admin" | "researcher"; // resolved at runtime, not in DB
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  role: MemberRole;
+  approval_status: ApprovalStatus | null; // Only for researchers and research assistants; null for admins
 }
 
-export interface ResearchInterest {
-  id?: string;
-  member_id?: string;
-  category: "THEORETICAL" | "APPLIED";
-  interest_name: string;
-  display_order?: number;
+export interface Profile extends BaseMember {
+  role_detail?: {
+    country?: string;
+    linkedin_url?: string;
+    image_url?: string;
+    bio?: string;
+    occupation?: string;
+    workplace?: string;
+    approval_status?: ApprovalStatus;
+    education?: EducationalBackground[];
+    ongoing_research?: OngoingResearch[];
+  }
 }
 
-export interface AcademicQualification {
-  id?: string;
-  member_id?: string;
+export interface EducationalBackground {
+  id: number;
+  researcher_id: number;
   degree: string;
-  institution: string;
-  period: string;
-  details?: string;
-  display_order?: number;
-}
-
-export interface CareerResponsibility {
-  id?: string;
-  career_experience_id?: string;
-  description: string;
-  display_order?: number;
-}
-
-export interface CareerExperience {
-  id?: string;
-  member_id?: string;
-  category: "ACADEMIC" | "INDUSTRY" | "VOLUNTEER";
-  role: string;
-  institution: string;
-  period: string;
-  display_order?: number;
-  career_responsibilities?: CareerResponsibility[];
-}
-
-export interface HonoursAndAward {
-  id?: string;
-  member_id?: string;
-  description: string;
-  display_order?: number;
-}
-
-export interface Membership {
-  id?: string;
-  member_id?: string;
-  organization_name: string;
-  display_order?: number;
 }
 
 export interface OngoingResearch {
-  id?: string;
-  member_id?: string;
-  research_title: string;
-  display_order?: number;
-}
-
-export interface MemberCV extends Member {
-  research_interests?: ResearchInterest[];
-  academic_qualifications?: AcademicQualification[];
-  career_experiences?: CareerExperience[];
-  honours_and_awards?: HonoursAndAward[];
-  memberships?: Membership[];
-  ongoing_research?: OngoingResearch[];
-}
-
-export interface ResearchPublication {
-  id?: string;
-  member_id?: string;
+  id: number;
+  researcher_id: number;
   title: string;
-  authors: string;
-  venue?: string;
-  publication_year?: number;
-  doi?: string;
-  link?: string;
-  abstract?: string;
-  status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED";
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface Project {
-  id?: string;
-  member_id?: string;
-  category: string;
-  icon_name?: string;
-  description?: string;
-  status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED";
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface ProjectItem {
-  id?: string;
-  project_id: string;
-  title: string;
-  description: string;
-  display_order: number;
-}
-
-export interface Grant {
-  id?: string;
-  member_id?: string;
-  title: string;
-  agency: string;
-  award_year?: string;
-  description?: string;
-  status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED";
-  created_at?: string;
-}
-
-export interface Event {
-  id?: string;
-  member_id?: string;
-  title: string;
-  event_type?: string;
-  event_date?: string;
-  description?: string;
-  link?: string;
-  status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED";
-  created_at?: string;
 }
 
 export interface Blog {
-  id?: string;
-  member_id?: string;
-  slug: string;
+  id: number;
   title: string;
-  excerpt?: string;
-  author_name?: string;
-  published_date?: string;
-  image_url?: string;
-  tags?: string[];
+  description: string;
   content: string;
-  status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED";
-  created_at?: string;
-  updated_at?: string;
+  approval_status: ApprovalStatus;
+  created_at: string;
+  updated_at: string;
+  created_by_member_id: number | null;
+  created_by_former_member_id: number | null;
+  blog_keyword?: { keyword: string }[];
+  blog_image?: { image_url: string }[];
 }
 
-export interface TutorialSeries {
-  id?: string;
-  member_id?: string;
-  slug: string;
+export interface Tutorial {
+  id: number;
   title: string;
-  description?: string;
-  status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED";
-  created_at?: string;
-  updated_at?: string;
+  content: string;
+  description: string;
+  approval_status: ApprovalStatus;
+  created_at: string;
+  updated_at: string;
+  tutorial_image?: { image_url: string }[];
 }
 
-export interface TutorialPage {
-  id?: string;
-  series_id: string;
-  parent_id?: string;
-  slug: string;
+export interface Project {
+  id: number;
   title: string;
-  content?: string;
-  display_order: number;
-  created_at?: string;
-  updated_at?: string;
+  description: string;
+  link?: string;
+  approval_status: ApprovalStatus;
+  created_at: string;
+  updated_at: string;
+  project_diagram?: { diagram_url: string }[];
 }
 
-// ─── Request helper ───────────────────────────────────────────────────────────
-async function request<T>(
-  path: string,
-  token: string | null,
-  options: RequestInit = {}
-): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
-  if (!res.ok) {
-    const msg = await res.text().catch(() => "Unknown error");
-    throw new Error(`API ${res.status}: ${msg}`);
-  }
-  // 204 No Content
-  if (res.status === 204) return undefined as unknown as T;
-  return res.json() as Promise<T>;
+export interface Event {
+  id: number;
+  title: string;
+  description: string;
+  event_date: string;
+  event_time: string;
+  premises: string;
+  host: string;
+  approval_status: ApprovalStatus;
+  created_at: string;
+  event_image?: { image_url: string }[];
 }
 
-// ─── API ──────────────────────────────────────────────────────────────────────
+export interface Grant {
+  id: number;
+  title: string;
+  description: string;
+  legal_docs: string;
+  passed_date: string;
+  expire_date: string;
+  approval_status: ApprovalStatus;
+  created_at: string;
+}
+
+export type PublicationType = 'CONFERENCE' | 'BOOK' | 'JOURNAL' | 'ARTICLE';
+
+export interface Publication {
+  id: number;
+  title: string;
+  approval_status: ApprovalStatus;
+  created_at: string;
+  type?: PublicationType;
+  conference_paper?: { paper_id: string; link?: string; description?: string };
+  book?: { isbn: string; link?: string; description?: string };
+  journal?: { issn: string; link?: string; description?: string };
+  article?: { doi: string; link?: string; description?: string };
+}
+
+// ─── API Methods ──────────────────────────────────────────────────────────────
+
 export const api = {
-  // ── Me ────────────────────────────────────────────────────────────────────
   me: {
-    get: (token: string) => request<Member>("/admin/me", token),
-    update: (token: string, data: Partial<Member>) =>
-      request<Member>("/admin/me", token, { method: "PUT", body: JSON.stringify(data) }),
-    changePassword: (token: string, data: any) =>
-      request<{ message: string }>("/admin/me/password", token, { method: "POST", body: JSON.stringify(data) }),
-    cv: {
-      get: (token: string) => request<MemberCV>("/admin/me/cv", token),
-      create: <T>(token: string, section: string, data: Partial<T>) =>
-        request<T>(`/admin/me/cv/${section}`, token, { method: "POST", body: JSON.stringify(data) }),
-      update: <T>(token: string, section: string, id: string, data: Partial<T>) =>
-        request<T>(`/admin/me/cv/${section}/${id}`, token, { method: "PUT", body: JSON.stringify(data) }),
-      delete: (token: string, section: string, id: string) =>
-        request<void>(`/admin/me/cv/${section}/${id}`, token, { method: "DELETE" }),
-    },
+    get: () => apiClient.get<Profile>('/me').then(res => res.data),
+    update: (data: Partial<Profile['role_detail']> & Pick<Profile, 'first_name' | 'second_name'>) => apiClient.put('/me', data).then(res => res.data),
+    addEducation: (degree: string) => apiClient.post<EducationalBackground>('/me/education', { degree }).then(res => res.data),
+    removeEducation: (id: number) => apiClient.delete(`/me/education/${id}`).then(res => res.data),
+    addOngoingResearch: (title: string) => apiClient.post<OngoingResearch>('/me/ongoing-research', { title }).then(res => res.data),
+    removeOngoingResearch: (id: number) => apiClient.delete(`/me/ongoing-research/${id}`).then(res => res.data),
+    changePassword: (data: any) => apiClient.post('/me/change-password', data).then(res => res.data),
   },
-
-  // ── Publications ──────────────────────────────────────────────────────────
-  publications: {
-    list: (token: string) =>
-      request<ResearchPublication[]>("/admin/publications", token),
-    create: (token: string, data: Partial<ResearchPublication>) =>
-      request<ResearchPublication>("/admin/publications", token, {
-        method: "POST", body: JSON.stringify(data),
-      }),
-    update: (token: string, id: string, data: Partial<ResearchPublication>) =>
-      request<ResearchPublication>(`/admin/publications/${id}`, token, {
-        method: "PUT", body: JSON.stringify(data),
-      }),
-    delete: (token: string, id: string) =>
-      request<void>(`/admin/publications/${id}`, token, { method: "DELETE" }),
-    summarize: (token: string, text: string) =>
-      request<{ summary: string }>("/public/summarize", token, {
-        method: "POST", body: JSON.stringify({ text }),
-      }),
+  admin: {
+    getMembers: () => apiClient.get<BaseMember[]>('/admin/members').then(res => res.data),
+    getMemberDetails: (id: number) => apiClient.get<Profile>(`/admin/members/${id}`).then(res => res.data),
+    approveMember: (id: number) => apiClient.patch(`/admin/members/${id}/approve`).then(res => res.data),
+    rejectMember: (id: number) => apiClient.patch(`/admin/members/${id}/reject`).then(res => res.data),
+    getPendingContent: () => apiClient.get<Record<string, any[]>>('/admin/content/pending').then(res => res.data),
+    approveContent: (table: string, id: number) => apiClient.patch(`/admin/content/${table}/${id}/approve`).then(res => res.data),
+    rejectContent: (table: string, id: number) => apiClient.patch(`/admin/content/${table}/${id}/reject`).then(res => res.data),
   },
-
-  // ── Blog ──────────────────────────────────────────────────────────────────
-  blog: {
-    list: (token: string) =>
-      request<Blog[]>("/admin/blog", token),
-    create: (token: string, data: Partial<Blog>) =>
-      request<Blog>("/admin/blog", token, { method: "POST", body: JSON.stringify(data) }),
-    update: (token: string, id: string, data: Partial<Blog>) =>
-      request<Blog>(`/admin/blog/${id}`, token, { method: "PUT", body: JSON.stringify(data) }),
-    delete: (token: string, id: string) =>
-      request<void>(`/admin/blog/${id}`, token, { method: "DELETE" }),
+  blogs: {
+    list: () => apiClient.get<Blog[]>('/blogs').then(res => res.data),
+    get: (id: number) => apiClient.get<Blog>(`/blogs/${id}`).then(res => res.data),
+    create: (data: Partial<Blog>) => apiClient.post<Blog>('/blogs', data).then(res => res.data),
+    update: (id: number, data: Partial<Blog>) => apiClient.put<Blog>(`/blogs/${id}`, data).then(res => res.data),
+    delete: (id: number) => apiClient.delete(`/blogs/${id}`).then(res => res.data),
   },
-
-  // ── Events ────────────────────────────────────────────────────────────────
   events: {
-    list: (token: string) =>
-      request<Event[]>("/admin/events", token),
-    create: (token: string, data: Partial<Event>) =>
-      request<Event>("/admin/events", token, { method: "POST", body: JSON.stringify(data) }),
-    update: (token: string, id: string, data: Partial<Event>) =>
-      request<Event>(`/admin/events/${id}`, token, { method: "PUT", body: JSON.stringify(data) }),
-    delete: (token: string, id: string) =>
-      request<void>(`/admin/events/${id}`, token, { method: "DELETE" }),
+    list: () => apiClient.get<Event[]>('/events').then(res => res.data),
+    get: (id: number) => apiClient.get<Event>(`/events/${id}`).then(res => res.data),
+    create: (data: Partial<Event>) => apiClient.post<Event>('/events', data).then(res => res.data),
+    update: (id: number, data: Partial<Event>) => apiClient.put<Event>(`/events/${id}`, data).then(res => res.data),
+    delete: (id: number) => apiClient.delete(`/events/${id}`).then(res => res.data),
   },
-
-  // ── Grants ────────────────────────────────────────────────────────────────
   grants: {
-    list: (token: string) =>
-      request<Grant[]>("/admin/grants", token),
-    create: (token: string, data: Partial<Grant>) =>
-      request<Grant>("/admin/grants", token, { method: "POST", body: JSON.stringify(data) }),
-    update: (token: string, id: string, data: Partial<Grant>) =>
-      request<Grant>(`/admin/grants/${id}`, token, { method: "PUT", body: JSON.stringify(data) }),
-    delete: (token: string, id: string) =>
-      request<void>(`/admin/grants/${id}`, token, { method: "DELETE" }),
+    list: () => apiClient.get<Grant[]>('/grants').then(res => res.data),
+    get: (id: number) => apiClient.get<Grant>(`/grants/${id}`).then(res => res.data),
+    create: (data: Partial<Grant>) => apiClient.post<Grant>('/grants', data).then(res => res.data),
+    update: (id: number, data: Partial<Grant>) => apiClient.put<Grant>(`/grants/${id}`, data).then(res => res.data),
+    delete: (id: number) => apiClient.delete(`/grants/${id}`).then(res => res.data),
   },
-
-  // ── Members ───────────────────────────────────────────────────────────────
-  members: {
-    list: (token: string) =>
-      request<Member[]>("/admin/members", token),
-    create: (token: string, data: Partial<Member>) =>
-      request<Member>("/admin/members", token, { method: "POST", body: JSON.stringify(data) }),
-    updateStatus: (token: string, id: string, status: string) =>
-      request<Member>(`/admin/members/${id}`, token, {
-        method: "PATCH", body: JSON.stringify({ status }),
-      }),
-  },
-
-  // ── Projects ──────────────────────────────────────────────────────────────
   projects: {
-    list: (token: string) =>
-      request<Project[]>("/admin/projects", token),
-    create: (token: string, data: Partial<Project>) =>
-      request<Project>("/admin/projects", token, { method: "POST", body: JSON.stringify(data) }),
-    update: (token: string, id: string, data: Partial<Project>) =>
-      request<Project>(`/admin/projects/${id}`, token, { method: "PUT", body: JSON.stringify(data) }),
-    delete: (token: string, id: string) =>
-      request<void>(`/admin/projects/${id}`, token, { method: "DELETE" }),
+    list: () => apiClient.get<Project[]>('/projects').then(res => res.data),
+    get: (id: number) => apiClient.get<Project>(`/projects/${id}`).then(res => res.data),
+    create: (data: Partial<Project>) => apiClient.post<Project>('/projects', data).then(res => res.data),
+    update: (id: number, data: Partial<Project>) => apiClient.put<Project>(`/projects/${id}`, data).then(res => res.data),
+    delete: (id: number) => apiClient.delete(`/projects/${id}`).then(res => res.data),
   },
-  projectItems: {
-    list: (token: string, projectId: string) =>
-      request<ProjectItem[]>(`/admin/project-items?project_id=${projectId}`, token),
-    create: (token: string, data: Partial<ProjectItem>) =>
-      request<ProjectItem>("/admin/project-items", token, { method: "POST", body: JSON.stringify(data) }),
-    update: (token: string, id: string, data: Partial<ProjectItem>) =>
-      request<ProjectItem>(`/admin/project-items/${id}`, token, { method: "PUT", body: JSON.stringify(data) }),
-    delete: (token: string, id: string) =>
-      request<void>(`/admin/project-items/${id}`, token, { method: "DELETE" }),
+  tutorials: {
+    list: () => apiClient.get<Tutorial[]>('/tutorials').then(res => res.data),
+    get: (id: number) => apiClient.get<Tutorial>(`/tutorials/${id}`).then(res => res.data),
+    create: (data: Partial<Tutorial>) => apiClient.post<Tutorial>('/tutorials', data).then(res => res.data),
+    update: (id: number, data: Partial<Tutorial>) => apiClient.put<Tutorial>(`/tutorials/${id}`, data).then(res => res.data),
+    delete: (id: number) => apiClient.delete(`/tutorials/${id}`).then(res => res.data),
   },
-
-  // ── Tutorials ──────────────────────────────────────────────────────────────
-  tutorialSeries: {
-    list: (token: string) =>
-      request<TutorialSeries[]>("/admin/tutorials", token),
-    create: (token: string, data: Partial<TutorialSeries>) =>
-      request<TutorialSeries>("/admin/tutorials", token, { method: "POST", body: JSON.stringify(data) }),
-    update: (token: string, id: string, data: Partial<TutorialSeries>) =>
-      request<TutorialSeries>(`/admin/tutorials/${id}`, token, { method: "PUT", body: JSON.stringify(data) }),
-    delete: (token: string, id: string) =>
-      request<void>(`/admin/tutorials/${id}`, token, { method: "DELETE" }),
-  },
-  tutorialPages: {
-    list: (token: string, seriesId: string) =>
-      request<TutorialPage[]>(`/admin/tutorial-pages?series_id=${seriesId}`, token),
-    create: (token: string, data: Partial<TutorialPage>) =>
-      request<TutorialPage>("/admin/tutorial-pages", token, { method: "POST", body: JSON.stringify(data) }),
-    update: (token: string, id: string, data: Partial<TutorialPage>) =>
-      request<TutorialPage>(`/admin/tutorial-pages/${id}`, token, { method: "PUT", body: JSON.stringify(data) }),
-    delete: (token: string, id: string) =>
-      request<void>(`/admin/tutorial-pages/${id}`, token, { method: "DELETE" }),
-  },
+  publications: {
+    list: () => apiClient.get<Publication[]>('/publications').then(res => res.data),
+    get: (id: number) => apiClient.get<Publication>(`/publications/${id}`).then(res => res.data),
+    create: (data: Partial<Publication>) => apiClient.post<Publication>('/publications', data).then(res => res.data),
+    update: (id: number, data: Partial<Publication>) => apiClient.put<Publication>(`/publications/${id}`, data).then(res => res.data),
+    delete: (id: number) => apiClient.delete(`/publications/${id}`).then(res => res.data),
+    linkSubtype: (id: number, subtype: string, data: any) => apiClient.post(`/publications/${id}/${subtype}`, data).then(res => res.data),
+  }
 };
