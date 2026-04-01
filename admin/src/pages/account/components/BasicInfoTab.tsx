@@ -1,78 +1,44 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
-import { api, type MemberCV } from "../../../lib/api";
+import { Loader2, User, Mail, Globe, Linkedin, MapPin, Briefcase } from "lucide-react";
+import { api, type Profile } from "../../../lib/api";
 import { useAuth } from "../../../hooks/useAuth";
+import { FormField, FormInput, FormTextArea } from "../../../components/shared/FormElements";
 
 interface Props {
-  cv: MemberCV;
+  cv: Profile;
   onUpdate: () => void;
   isEditing?: boolean;
 }
 
 export function BasicInfoTab({ cv, onUpdate, isEditing }: Props) {
-  const { token, updateUser, user } = useAuth();
+  const { refreshUser } = useAuth();
   const [formData, setFormData] = useState({
-    name: cv.name,
-    position: cv.position ?? "",
-    contact_email: cv.contact_email ?? "",
-    image_url: cv.image_url ?? "",
-    university: cv.university ?? "",
-    country: cv.country ?? "",
-    linkedin_url: cv.linkedin_url ?? "",
-    summary: cv.summary ?? "",
+    first_name: cv.first_name,
+    second_name: cv.second_name,
+    contact_email: cv.contact_email,
+    workplace: cv.role_detail?.workplace || "",
+    occupation: cv.role_detail?.occupation || "",
+    country: cv.role_detail?.country || "",
+    linkedin_url: cv.role_detail?.linkedin_url || "",
+    bio: cv.role_detail?.bio || "",
+    image_url: cv.role_detail?.image_url || ""
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const countries = [
-    "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
-    "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi",
-    "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic",
-    "Denmark", "Djibouti", "Dominica", "Dominican Republic",
-    "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia",
-    "Fiji", "Finland", "France",
-    "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana",
-    "Haiti", "Holy See", "Honduras", "Hungary",
-    "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy",
-    "Jamaica", "Japan", "Jordan",
-    "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan",
-    "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg",
-    "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar",
-    "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway",
-    "Oman",
-    "Pakistan", "Palau", "Palestine State", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal",
-    "Qatar",
-    "Romania", "Russia", "Rwanda",
-    "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria",
-    "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu",
-    "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States of America", "Uruguay", "Uzbekistan",
-    "Vanuatu", "Venezuela", "Vietnam",
-    "Yemen",
-    "Zambia", "Zimbabwe"
-  ];
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token) return;
     setSaving(true);
     setError(null);
     setSuccess(false);
     try {
-      const updated = await api.me.update(token, formData);
-      updateUser({
-        name: updated.name,
-        position: updated.position,
-        email: updated.contact_email ?? user?.email,
-        avatar: updated.image_url,
-      });
+      await api.me.update(formData);
+      await refreshUser();
       setSuccess(true);
       onUpdate();
     } catch (err: any) {
-      console.error("Profile update error:", err);
-      // Enhanced error handling: extract message from API response if possible
-      const msg = err.message || (typeof err === 'string' ? err : "Failed to save profile.");
-      setError(msg);
+      setError(err.response?.data?.message || err.message || "Failed to save profile.");
     } finally {
       setSaving(false);
       setTimeout(() => setSuccess(false), 3000);
@@ -81,40 +47,31 @@ export function BasicInfoTab({ cv, onUpdate, isEditing }: Props) {
 
   if (!isEditing) {
     return (
-      <div className="bg-white border border-zinc-200 rounded-xl p-6 lg:p-8 shadow-sm transition-all duration-300">
-        <h2 className="text-lg font-bold text-zinc-900 mb-6 font-mono tracking-tight">Basic Information</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+      <div className="bg-white border border-zinc-200/60 rounded-[2.5rem] p-10 shadow-sm transition-all duration-300">
+        <div className="flex items-center gap-3 mb-8">
+           <div className="w-10 h-10 bg-zinc-900 rounded-2xl flex items-center justify-center text-white"><User size={20} /></div>
+           <h2 className="text-lg font-black text-zinc-900 tracking-tight">Identity Foundation</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
           <div className="group">
-            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1.5 group-hover:text-zinc-500 transition-colors">Full Name</label>
-            <p className="text-zinc-900 font-medium">{cv.name || <span className="text-zinc-300 italic">No data has added yet</span>}</p>
+            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block mb-2 group-hover:text-zinc-600 transition-colors">Digital Identity</label>
+            <p className="text-zinc-900 font-bold flex items-center gap-2"><User size={14} className="text-zinc-300" /> {cv.first_name} {cv.second_name}</p>
           </div>
           <div className="group">
-            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1.5 group-hover:text-zinc-500 transition-colors">Position</label>
-            <p className="text-zinc-900">{cv.position || <span className="text-zinc-300 italic">No data has added yet</span>}</p>
+            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block mb-2 group-hover:text-zinc-600 transition-colors">Academic Nexus</label>
+            <p className="text-zinc-900 font-bold flex items-center gap-2"><Briefcase size={14} className="text-zinc-300" /> {cv.role_detail?.workplace || "Global Researcher"}</p>
           </div>
           <div className="group">
-            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1.5 group-hover:text-zinc-500 transition-colors">Contact Email</label>
-            <p className="text-zinc-900 underline decoration-zinc-100 underline-offset-4">{cv.contact_email || <span className="text-zinc-300 italic">No data has added yet</span>}</p>
+            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block mb-2 group-hover:text-zinc-600 transition-colors">Contact Node</label>
+            <p className="text-zinc-900 font-bold flex items-center gap-2 underline decoration-zinc-100 underline-offset-4"><Mail size={14} className="text-zinc-300" /> {cv.contact_email}</p>
           </div>
           <div className="group">
-            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1.5 group-hover:text-zinc-500 transition-colors">University</label>
-            <p className="text-zinc-900">{cv.university || <span className="text-zinc-300 italic">No data has added yet</span>}</p>
+            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block mb-2 group-hover:text-zinc-600 transition-colors">Geographic Region</label>
+            <p className="text-zinc-900 font-bold flex items-center gap-2"><Globe size={14} className="text-zinc-300" /> {cv.role_detail?.country || "Earth Terminal"}</p>
           </div>
-          <div className="group">
-            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1.5 group-hover:text-zinc-500 transition-colors">Country</label>
-            <p className="text-zinc-900">{cv.country || <span className="text-zinc-300 italic">No data has added yet</span>}</p>
-          </div>
-          <div className="group">
-            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1.5 group-hover:text-zinc-500 transition-colors">LinkedIn Profile</label>
-            {cv.linkedin_url ? (
-              <a href={cv.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-zinc-900 font-medium hover:text-black hover:underline underline-offset-4 truncate block max-w-xs transition-all">{cv.linkedin_url}</a>
-            ) : (
-              <p className="text-zinc-300 italic">No data has added yet</p>
-            )}
-          </div>
-          <div className="md:col-span-2 group">
-            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1.5 group-hover:text-zinc-500 transition-colors">Biography</label>
-            <p className="text-zinc-700 leading-relaxed whitespace-pre-wrap text-sm">{cv.summary || <span className="text-zinc-300 italic">No data has added yet</span>}</p>
+          <div className="group md:col-span-2">
+            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block mb-2 group-hover:text-zinc-600 transition-colors">Professional Biography</label>
+            <p className="text-zinc-600 font-medium leading-relaxed italic border-l-2 border-zinc-100 pl-6">{cv.role_detail?.bio || "No professional statement has been recorded for this identity node."}</p>
           </div>
         </div>
       </div>
@@ -122,61 +79,40 @@ export function BasicInfoTab({ cv, onUpdate, isEditing }: Props) {
   }
 
   return (
-    <div className="bg-white border border-zinc-200 rounded-xl p-6 lg:p-8 shadow-sm animate-in fade-in slide-in-from-bottom-2">
-      <div className="flex items-center gap-2 mb-6">
-        <h2 className="text-lg font-bold text-zinc-900 underline decoration-amber-200 underline-offset-8">Edit Profile Details</h2>
+    <div className="bg-white border border-zinc-200/60 rounded-[2.5rem] p-10 shadow-xl shadow-black/5 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="flex items-center gap-3 mb-8">
+         <div className="w-10 h-10 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600"><User size={20} /></div>
+         <h2 className="text-lg font-black text-zinc-900 tracking-tight">Modify Identity Core</h2>
       </div>
       
-      {error && <div className="mb-6 p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100">{error}</div>}
+      {error && <div className="mb-8 p-4 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-2xl animate-in shake duration-300">{error}</div>}
       
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Display Name <span className="text-red-500">*</span></label>
-            <input type="text" required value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-zinc-400 text-sm" />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Position / Academic Title</label>
-            <input type="text" value={formData.position || ""} onChange={(e) => setFormData({ ...formData, position: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-zinc-400 text-sm" />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Contact Email</label>
-            <input type="email" value={formData.contact_email || ""} onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-zinc-400 text-sm" />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Avatar URL</label>
-            <input type="url" value={formData.image_url || ""} onChange={(e) => setFormData({ ...formData, image_url: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-zinc-400 text-sm" />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Primary Institution</label>
-            <input type="text" value={formData.university || ""} onChange={(e) => setFormData({ ...formData, university: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-zinc-400 text-sm" />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Country</label>
-            <select 
-              value={formData.country || ""} 
-              onChange={(e) => setFormData({ ...formData, country: e.target.value })} 
-              className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-zinc-400 text-sm"
-            >
-              <option value="">Select Country</option>
-              {countries.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="space-y-1.5 md:col-span-2">
-            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">LinkedIn Address</label>
-            <input type="url" value={formData.linkedin_url || ""} onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-zinc-400 text-sm" placeholder="https://linkedin.com/in/..." />
-          </div>
-          <div className="space-y-1.5 md:col-span-2">
-            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Professional Bio</label>
-            <textarea rows={4} value={formData.summary || ""} onChange={(e) => setFormData({ ...formData, summary: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-zinc-400 text-sm" />
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <FormField label="First Name"><FormInput value={formData.first_name} onChange={e => setFormData({ ...formData, first_name: e.target.value })} required /></FormField>
+          <FormField label="Second Name"><FormInput value={formData.second_name} onChange={e => setFormData({ ...formData, second_name: e.target.value })} required /></FormField>
+          <FormField label="Role / Occupation"><FormInput value={formData.occupation} onChange={e => setFormData({ ...formData, occupation: e.target.value })} placeholder="e.g., Lead Neural Architect" /></FormField>
+          <FormField label="Academic Node / Workplace"><FormInput value={formData.workplace} onChange={e => setFormData({ ...formData, workplace: e.target.value })} placeholder="e.g., MIT Media Lab" /></FormField>
+          <FormField label="Geographic Region">
+            <div className="relative">
+               <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300" />
+               <FormInput className="pl-12" value={formData.country} onChange={e => setFormData({ ...formData, country: e.target.value })} placeholder="e.g., Sri Lanka" />
+            </div>
+          </FormField>
+          <FormField label="LinkedIn Identity">
+             <div className="relative">
+               <Linkedin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300" />
+               <FormInput className="pl-12" value={formData.linkedin_url} onChange={e => setFormData({ ...formData, linkedin_url: e.target.value })} placeholder="https://linkedin.com/..." />
+            </div>
+          </FormField>
+          <FormField label="Avatar Digital Stream" full><FormInput value={formData.image_url} onChange={e => setFormData({ ...formData, image_url: e.target.value })} placeholder="https://..." /></FormField>
+          <FormField label="Identity Mission / Bio" full><FormTextArea className="min-h-[150px]" value={formData.bio} onChange={e => setFormData({ ...formData, bio: e.target.value })} placeholder="State your research philosophy..." /></FormField>
         </div>
         
-        <div className="pt-4 flex items-center justify-end gap-4 border-t border-zinc-100">
-          {success && <span className="text-sm text-green-600 font-bold">Details Saved</span>}
-          <button type="submit" disabled={saving || !formData.name} className="flex items-center gap-2 px-6 py-2 bg-black text-white text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-zinc-800 disabled:opacity-50 transition-all shadow-md active:scale-95">
-            {saving && <Loader2 size={16} className="animate-spin" />}
-            Commit Changes
+        <div className="pt-8 flex items-center justify-end gap-6 border-t border-zinc-100">
+          {success && <span className="text-xs font-black text-emerald-600 uppercase tracking-widest animate-in fade-in slide-in-from-right-2">Identity Sync Successful</span>}
+          <button type="submit" disabled={saving} className="bg-zinc-900 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-900/10 active:scale-95 disabled:opacity-50 flex items-center gap-3">
+            {saving ? <Loader2 size={16} className="animate-spin" /> : "Commit Changes"}
           </button>
         </div>
       </form>

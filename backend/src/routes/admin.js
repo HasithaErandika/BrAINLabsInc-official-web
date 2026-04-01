@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { supabase } from '../config/supabase.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireRole } from '../middleware/requireRole.js';
-import { approveContent, rejectContent, getAllPendingContent } from '../db/queries.js';
+import { getJoined, approveContent, rejectContent, getAllPendingContent } from '../db/queries.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole('admin'));
@@ -22,13 +22,25 @@ adminRouter.get('/members', async (_req, res) => {
 
   if (error) return res.status(500).json({ error: error.message });
 
-  // Flatten role info
+  // Flatten role info with robust join check
   const members = (data ?? []).map(m => {
     let role = 'pending';
     let approval_status = null;
-    if (m.admin) role = 'admin';
-    else if (m.researcher) { role = 'researcher'; approval_status = m.researcher.approval_status; }
-    else if (m.research_assistant) { role = 'research_assistant'; approval_status = m.research_assistant.approval_status; }
+    
+    const adminRow = getJoined(m.admin);
+    const researcherRow = getJoined(m.researcher);
+    const raRow = getJoined(m.research_assistant);
+
+    if (adminRow) {
+      role = 'admin';
+    } else if (researcherRow) {
+      role = 'researcher';
+      approval_status = researcherRow.approval_status;
+    } else if (raRow) {
+      role = 'research_assistant';
+      approval_status = raRow.approval_status;
+    }
+    
     const { admin, researcher, research_assistant, ...base } = m;
     return { ...base, role, approval_status };
   });

@@ -4,11 +4,9 @@ import { supabase } from '../config/supabase.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireRole } from '../middleware/requireRole.js';
 import {
-  getMemberWithRoleByAuthId,
-  getEducationByResearcher,
+  getJoined,
   addEducation,
   deleteEducation,
-  getOngoingResearch,
   addOngoingResearch,
   deleteOngoingResearch,
 } from '../db/queries.js';
@@ -40,11 +38,7 @@ const OngoingResearchSchema = z.object({
 // ─── GET /me ─────────────────────────────────────────────────────────────────
 
 meRouter.get('/', async (req, res) => {
-  const { member, role, roleRow } = await getMemberWithRoleByAuthId(req.user.email
-    ? undefined
-    : String(req.user.sub));
-
-  // Re-fetch using sub (member.id)
+  // Primary fetch using member ID from JWT sub
   const { data, error } = await supabase
     .from('member')
     .select(`
@@ -56,13 +50,26 @@ meRouter.get('/', async (req, res) => {
     .eq('id', req.user.sub)
     .single();
 
-  if (error || !data) return res.status(404).json({ error: 'Profile not found' });
+  if (error || !data) return res.status(404).json({ error: 'Profile identity node not found' });
 
+  // Resolve active specialization (ISA)
   let roleDetail = null;
   let resolvedRole = 'pending';
-  if (data.admin) { resolvedRole = 'admin'; roleDetail = data.admin; }
-  else if (data.researcher) { resolvedRole = 'researcher'; roleDetail = data.researcher; }
-  else if (data.research_assistant) { resolvedRole = 'research_assistant'; roleDetail = data.research_assistant; }
+  
+  const adminRow = getJoined(data.admin);
+  const researcherRow = getJoined(data.researcher);
+  const raRow = getJoined(data.research_assistant);
+
+  if (adminRow) { 
+    resolvedRole = 'admin'; 
+    roleDetail = adminRow; 
+  } else if (researcherRow) { 
+    resolvedRole = 'researcher'; 
+    roleDetail = researcherRow; 
+  } else if (raRow) { 
+    resolvedRole = 'research_assistant'; 
+    roleDetail = raRow; 
+  }
 
   const { admin, researcher, research_assistant, ...base } = data;
 
@@ -104,7 +111,7 @@ meRouter.put('/', async (req, res) => {
     }
   }
 
-  res.json({ message: 'Profile updated successfully' });
+  res.json({ message: 'Profile node updated successfully' });
 });
 
 // ─── Education (researcher only) ──────────────────────────────────────────────

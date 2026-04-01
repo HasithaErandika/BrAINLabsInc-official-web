@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useState } from "react";
 import { Loader2, ShieldCheck, Mail } from "lucide-react";
 import { api } from "../../lib/api";
@@ -33,18 +34,24 @@ export default function Settings() {
     setSuccess(false);
     
     try {
-      await api.me.changePassword(token, {
+      await api.me.changePassword({
         current_password: formData.current_password,
         new_password: formData.new_password,
       });
       setSuccess(true);
+
       setFormData({ current_password: "", new_password: "", confirm_password: "" });
-    } catch (err: any) {
-      setError(err.message || "Failed to update password. Check your current password.");
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message || "Failed to update password. Check your current password.");
+      } else {
+        setError("An unexpected error occurred while updating password.");
+      }
     } finally {
       setSaving(false);
     }
   };
+
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">

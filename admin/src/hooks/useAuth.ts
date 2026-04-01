@@ -25,6 +25,7 @@ interface AuthState {
   isAdmin: () => boolean;
   isResearcher: () => boolean;
   isAssistant: () => boolean;
+  refreshUser: () => Promise<void>;
 }
 
 export const useAuth = create<AuthState>()(
@@ -62,6 +63,15 @@ export const useAuth = create<AuthState>()(
       isAdmin: () => get().user?.role === "admin",
       isResearcher: () => get().user?.role === "researcher",
       isAssistant: () => get().user?.role === "research_assistant",
+
+      refreshUser: async () => {
+        try {
+          const res = await apiClient.get("/me");
+          set({ user: res.data });
+        } catch (err) {
+          console.error("Failed to refresh user", err);
+        }
+      },
     }),
     {
       name: "brain_labs_auth",

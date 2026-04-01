@@ -3,24 +3,23 @@ import {
   BookOpen, 
   FlaskConical, 
   Terminal, 
-  User, 
-  CheckCircle2, 
-  ArrowUpRight,
+  ArrowRight,
   ClipboardList,
-  Activity
+  Fingerprint
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api} from "../../lib/api";
 import { StatCard } from "./components/StatCard";
+import { MinimalCard, FunctionalButton } from "../../components/shared/UIPrimitives";
 
 interface Stats {
   publications: number;
   projects: number;
-  completeness: number;
+  lastActive: string;
 }
 
 export function ResearchAssistantDashboard({ memberId }: { memberId: number }) {
-  const [stats, setStats] = useState<Stats>({ publications: 0, projects: 0, completeness: 0 });
+  const [stats, setStats] = useState<Stats>({ publications: 0, projects: 0, lastActive: "Just now" });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,21 +29,13 @@ export function ResearchAssistantDashboard({ memberId }: { memberId: number }) {
           api.publications.list(),
           api.projects.list(),
         ]);
-
-        // Assistants view their contributed items
-        const myPubs = pubs.filter((p: any) => p.created_by_member_id === memberId).length;
-        const myProjs = projs.filter((p: any) => p.created_by_member_id === memberId).length;
-
-        // Profile completeness (RAs have simpler profiles than lead researchers)
-        const completeness = 85; // Placeholder for now
-
         setStats({
-          publications: myPubs,
-          projects: myProjs,
-          completeness
+          publications: pubs.length,
+          projects: projs.length,
+          lastActive: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         });
       } catch (err) {
-        console.error("Failed to fetch RA stats:", err);
+        console.error("Failed to fetch assistant stats:", err);
       } finally {
         setLoading(false);
       }
@@ -53,93 +44,90 @@ export function ResearchAssistantDashboard({ memberId }: { memberId: number }) {
   }, [memberId]);
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500">
-      {/* Assistant Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-zinc-100 pb-10">
+    <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-40">
+      {/* Premium Header */}
+      <div className="flex items-end justify-between border-b border-zinc-100 pb-12">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Activity size={18} className="text-zinc-900" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Collaboration Engine</span>
+          <div className="flex items-center gap-3 mb-4">
+             <div className="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center text-white shadow-2xl shadow-zinc-900/10">
+                <Terminal size={18} />
+             </div>
+             <span className="text-[11px] font-black uppercase tracking-[0.4em] text-zinc-400">Assistant Hub Active</span>
           </div>
-          <h1 className="text-4xl font-black text-zinc-900 tracking-tighter">Assistant <span className="text-zinc-300">Console</span></h1>
-          <p className="text-zinc-500 mt-2 font-medium">Support research initiatives and manage your assigned contributions.</p>
+          <h1 className="text-4xl font-black text-black tracking-tight mb-3">Support Workspace</h1>
+          <p className="text-sm text-zinc-500 font-medium max-w-2xl">Collaborative support interface for scientific registry maintenance and asset oversight.</p>
         </div>
-        <div className="flex flex-col gap-2">
-           <div className="flex items-center justify-end gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">
-             <div className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
-             System Integration
-           </div>
-           <div className="w-48 h-2.5 bg-zinc-100 rounded-full overflow-hidden border border-zinc-200">
-              <div 
-                className="h-full bg-black rounded-full transition-all duration-1000" 
-                style={{ width: `${stats.completeness}%` }}
-              />
-           </div>
-           <p className="text-[11px] font-bold text-zinc-900 text-right uppercase tracking-tighter mt-1">{stats.completeness}% Active</p>
+        <div className="hidden sm:flex flex-col items-end gap-3 text-right">
+           <p className="text-[11px] font-black text-zinc-300 uppercase tracking-widest leading-none">Last Synchronization</p>
+           <p className="text-2xl font-black text-black leading-none tracking-tighter uppercase">{stats.lastActive}</p>
         </div>
       </div>
 
-      {/* RA Specific Stats */}
+      {/* Grid: Support Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <StatCard 
-          label="My Contributions" 
-          value={loading ? "..." : stats.publications} 
-          icon={BookOpen} 
-          href="/publications" 
-          sub="Items you've collaborated on" 
-        />
-        <StatCard 
-          label="Active Collaborations" 
-          value={loading ? "..." : stats.projects} 
-          icon={FlaskConical} 
-          href="/projects" 
-          sub="Ongoing lab initiatives" 
-        />
+        <StatCard label="Global Publications" value={loading ? "..." : stats.publications} icon={BookOpen} href="/publications" />
+        <StatCard label="Active Initiatives" value={loading ? "..." : stats.projects} icon={FlaskConical} href="/projects" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Support Actions */}
-        <div className="bg-zinc-50 border border-zinc-200 rounded-[2.5rem] p-10 shadow-sm relative overflow-hidden group">
-           <div className="relative">
-              <h3 className="text-2xl font-black tracking-tighter text-zinc-900 mb-6 italic flex items-center gap-2">
-                <ClipboardList size={22} />
-                Support <span className="text-zinc-300">Actions</span>
-              </h3>
-              <div className="grid grid-cols-1 gap-3">
-                 {[
-                   { label: "Update Publication Draft", href: "/publications" },
-                   { label: "Log Lab Data", href: "/projects" },
-                   { label: "Draft Technical Note", href: "/blog" }
-                 ].map((action) => (
-                    <Link key={action.label} to={action.href} className="flex items-center justify-between p-5 bg-white border border-zinc-200 rounded-2xl hover:bg-black hover:text-white transition-all group/btn active:scale-95 shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <Terminal size={16} className="text-zinc-400 group-hover/btn:text-white" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">{action.label}</span>
-                      </div>
-                      <ArrowUpRight size={14} className="opacity-0 group-hover/btn:opacity-100 transition-all -translate-x-1 group-hover/btn:translate-x-0" />
-                    </Link>
-                 ))}
-              </div>
-           </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        {/* Task Assistance */}
+        <div className="lg:col-span-8">
+          <MinimalCard className="p-14 shadow-2xl shadow-zinc-200/50">
+             <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-zinc-300 mb-12 pb-5 border-b border-zinc-50 flex items-center gap-3">
+                <ClipboardList size={16} className="text-zinc-900" /> Operational Task queue
+             </h3>
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  { label: "Audit Registry", href: "/publications", desc: "Verify scientific data nodes" },
+                  { label: "Update Projects", href: "/projects", desc: "Synchronize initiative logic" },
+                  { label: "Dispatch Blog", href: "/blog", desc: "Moderate insight payloads" },
+                  { label: "Schedule Events", href: "/events", desc: "Manage research summits" }
+                ].map((action) => (
+                  <Link key={action.label} to={action.href} className="flex flex-col gap-4 p-8 border border-zinc-50 hover:bg-zinc-50/50 hover:border-zinc-200 hover:shadow-xl transition-all duration-500 rounded-3xl group">
+                    <div className="flex items-center justify-between">
+                       <div className="p-3 bg-zinc-900 text-white rounded-xl shadow-lg opacity-80 group-hover:opacity-100 transition-opacity">
+                          <Terminal size={18} />
+                       </div>
+                       <ArrowRight size={16} className="text-zinc-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                    </div>
+                    <div>
+                       <span className="text-[13px] font-black uppercase tracking-widest text-zinc-900 group-hover:underline transition-all">{action.label}</span>
+                       <p className="text-[11px] text-zinc-400 font-medium mt-1.5">{action.desc}</p>
+                    </div>
+                  </Link>
+                ))}
+             </div>
+          </MinimalCard>
         </div>
 
-        {/* Identity Section */}
-        <div className="bg-black rounded-[2.5rem] p-10 text-white shadow-xl flex flex-col justify-between">
-           <div>
-              <div className="flex items-center gap-3 mb-6">
-                 <div className="p-2.5 bg-white/10 rounded-xl">
-                    <User className="text-white" size={20} />
+        {/* Support Sidebar */}
+        <div className="lg:col-span-4 h-full">
+           <MinimalCard className="p-14 bg-zinc-50/50 border-zinc-100 h-full flex flex-col justify-between shadow-xl shadow-zinc-200/30">
+              <div>
+                 <h3 className="text-[12px] font-black uppercase tracking-widest text-black mb-8">Role Identity</h3>
+                 <p className="text-sm text-zinc-500 leading-relaxed font-medium mb-12">
+                   Authenticated support node with permissions for global research registry maintenance and assistant oversight.
+                 </p>
+                 <div className="space-y-4 mb-14 underline-offset-4">
+                   {[
+                     { label: "Support Auth", status: "Verified" },
+                     { label: "Data Integrity", status: "Safe" }
+                   ].map(feat => (
+                      <div key={feat.label} className="flex items-center justify-between py-4 border-b border-zinc-50 group cursor-default">
+                         <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest group-hover:text-zinc-900 transition-colors">{feat.label}</span>
+                         <span className="text-[10px] font-black text-zinc-900 uppercase tracking-widest bg-white px-3 py-1 rounded-full shadow-sm">{feat.status}</span>
+                      </div>
+                   ))}
                  </div>
-                 <h2 className="text-xl font-black tracking-tight">Personnel <span className="text-zinc-600">Verification</span></h2>
               </div>
-              <p className="text-sm text-zinc-400 leading-relaxed font-medium mb-8">
-                Your account is verified as a Research Assistant. All contributions are credited to your professional profile and monitored by lead researchers.
-              </p>
-           </div>
-           <Link to="/account" className="flex items-center justify-center gap-2 w-full py-4 bg-white text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-lg hover:bg-zinc-200 transition-all active:scale-95">
-             Review Credentials
-             <CheckCircle2 size={14} />
-           </Link>
+              <Link to="/account">
+                <FunctionalButton 
+                  className="w-full shadow-2xl shadow-zinc-900/10 hover:shadow-zinc-900/20 rounded-2xl"
+                >
+                  Identitiy Hub <Fingerprint size={14} className="ml-2" />
+                </FunctionalButton>
+              </Link>
+           </MinimalCard>
         </div>
       </div>
     </div>

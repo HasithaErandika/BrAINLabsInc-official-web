@@ -3,18 +3,14 @@ import {
   Users, 
   BookOpen, 
   FileText, 
-  CalendarDays, 
-  AlertCircle,
-  ArrowRight,
-  ShieldCheck,
-  Clock,
-  FlaskConical,
-  CheckCircle2,
-  Inbox
+  Inbox,
+  ArrowRight
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
 import { StatCard } from "./components/StatCard";
+import { MinimalCard, FunctionalButton } from "../../components/shared/UIPrimitives";
+import { cn } from "../../lib/utils";
 
 interface Stats {
   users: number;
@@ -105,145 +101,116 @@ export function AdminDashboard() {
   }, []);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Subtle Header */}
-      <div className="flex items-center justify-between border-b border-zinc-100 pb-8">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5 text-zinc-400">
-            <ShieldCheck size={14} className="text-zinc-900" />
-            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Governance Terminal</span>
-          </div>
-          <h1 className="text-3xl font-black text-zinc-900 tracking-tighter uppercase">Admin <span className="text-zinc-300">Console</span></h1>
+    <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-40">
+      {/* Premium Header */}
+      <div className="border-b border-zinc-100 pb-12">
+        <div className="flex items-center gap-3 mb-4">
+           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50 animate-pulse" />
+           <span className="text-[11px] font-black uppercase tracking-[0.4em] text-zinc-400">Moderation Active</span>
         </div>
+        <h1 className="text-4xl font-black text-black tracking-tight mb-3">Administrative Hub</h1>
+        <p className="text-sm text-zinc-500 font-medium max-w-2xl">Global system management, personnel oversight, and research output moderation.</p>
       </div>
 
-      {/* Mini Stat Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Members" value={loading ? "..." : stats.users} icon={Users} href="/users" />
-        <StatCard label="Research" value={loading ? "..." : stats.publications} icon={BookOpen} href="/publications" />
+      {/* Grid: Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard label="Personnel" value={loading ? "..." : stats.users} icon={Users} href="/dashboard/members" />
+        <StatCard label="Research Output" value={loading ? "..." : stats.publications} icon={BookOpen} href="/publications" />
         <StatCard label="Articles" value={loading ? "..." : stats.blog} icon={FileText} href="/blog" />
-        <StatCard label="Queue" value={loading ? "..." : stats.pending} icon={AlertCircle} href="/publications" />
+        <StatCard 
+          label="Audit Pending" 
+          value={loading ? "..." : stats.pending} 
+          icon={Inbox} 
+          href="/publications" 
+          className={cn(stats.pending > 0 ? "border-zinc-300 ring-4 ring-black/5" : "border-zinc-100")}
+          trend={{ value: stats.pending.toString(), label: "Items", type: "neutral" }}
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Main: Advanced Review Queue */}
-        <div className="lg:col-span-8 space-y-6">
-          <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-8 shadow-sm overflow-hidden relative group">
-            <div className="flex items-center justify-between mb-8">
-               <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-black/10">
-                    <Inbox size={22} />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-black text-zinc-900 tracking-tight uppercase">Priority Flow</h2>
-                    <p className="text-[10px] items-center gap-1 font-bold text-zinc-400 uppercase tracking-widest flex">
-                      <Clock size={10} /> Real-time Audit Queue
-                    </p>
-                  </div>
-               </div>
-               <Link to="/publications" className="px-5 py-2.5 bg-zinc-50 text-zinc-900 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-zinc-100 transition-all border border-zinc-100">
-                 System Audit
-               </Link>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        {/* Main: Audit Feed */}
+        <div className="lg:col-span-8 space-y-4">
+          <MinimalCard className="p-10 shadow-2xl shadow-zinc-200/50">
+            <div className="flex items-center justify-between mb-10 pb-4 border-b border-zinc-50">
+              <h2 className="text-[12px] font-black text-black uppercase tracking-widest flex items-center gap-3">
+                Prioritized Feed <span className="px-2.5 py-0.5 bg-zinc-900 text-white rounded-full text-[10px] tracking-normal">{pendingItems.length}</span>
+              </h2>
+              <Link to="/publications" className="text-[11px] font-bold text-zinc-400 hover:text-black uppercase underline underline-offset-8 transition-colors">Full Registry</Link>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {loading ? (
-                [1, 2, 3].map(i => <div key={i} className="skeleton h-20 w-full rounded-2xl" />)
+                [1, 2, 3].map(i => <div key={i} className="h-16 bg-zinc-50 rounded-2xl animate-pulse mb-3" />)
               ) : pendingItems.length > 0 ? (
-                pendingItems.map(item => (
+                pendingItems.map((item) => (
                   <Link 
                     key={`${item.type}-${item.id}`} 
                     to={item.href}
-                    className="flex items-center justify-between p-5 bg-zinc-50/50 hover:bg-white border border-transparent hover:border-zinc-200 rounded-2xl transition-all duration-300 group"
+                    className="flex items-center justify-between p-5 hover:bg-zinc-50 rounded-2xl transition-all duration-300 group"
                   >
-                    <div className="flex items-center gap-5">
-                       <div className="w-10 h-10 bg-white rounded-xl border border-zinc-100 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                         {item.type === 'Publication' && <BookOpen size={18} className="text-zinc-400" />}
-                         {item.type === 'Blog' && <FileText size={18} className="text-zinc-400" />}
-                         {item.type === 'Event' && <CalendarDays size={18} className="text-zinc-400" />}
-                         {item.type === 'Project' && <FlaskConical size={18} className="text-zinc-400" />}
+                    <div className="flex items-center gap-6">
+                       <div className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300",
+                          item.type === 'Publication' ? "bg-zinc-900 text-white" : "bg-zinc-50 text-zinc-400 group-hover:bg-zinc-200 group-hover:text-black"
+                       )}>
+                          <FileText size={16} />
                        </div>
                        <div>
-                         <div className="flex items-center gap-2 mb-0.5">
-                            <span className="px-2 py-0.5 bg-black text-white text-[8px] font-black uppercase tracking-widest rounded-md">{item.type}</span>
-                            <h4 className="text-xs font-black text-zinc-900 line-clamp-1 max-w-[300px]">{item.title}</h4>
-                         </div>
-                         <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">
-                           {item.author} • {item.date}
-                         </p>
+                          <p className="text-[13px] font-black text-black leading-none mb-2 group-hover:underline transition-all cursor-pointer">{item.title}</p>
+                          <p className="text-[11px] text-zinc-400 uppercase tracking-widest font-bold">
+                            {item.type} <span className="mx-2 text-zinc-200">•</span> {item.author}
+                          </p>
                        </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                       <div className="hidden sm:flex flex-col items-end">
-                          <span className="text-[10px] font-black text-zinc-900 uppercase tracking-tighter leading-none mb-1">Moderation Request</span>
-                          <span className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest">Awaiting Command</span>
-                       </div>
-                       <div className="w-8 h-8 rounded-full bg-white border border-zinc-100 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-all shadow-sm">
-                          <ArrowRight size={14} />
-                       </div>
-                    </div>
+                    <ArrowRight size={16} className="text-zinc-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                   </Link>
                 ))
               ) : (
-                <div className="py-20 text-center flex flex-col items-center">
-                   <div className="w-20 h-20 bg-zinc-50 rounded-[2rem] flex items-center justify-center mb-6">
-                      <CheckCircle2 size={32} className="text-emerald-500" />
-                   </div>
-                   <p className="text-zinc-900 text-sm font-black uppercase tracking-[0.2em] mb-2">Protocol Optimal</p>
-                   <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest italic">All nodes have been verified and processed.</p>
+                <div className="py-24 text-center flex flex-col items-center gap-6">
+                  <div className="p-5 bg-zinc-50 rounded-2xl"><Inbox size={32} className="text-zinc-200" /></div>
+                  <p className="text-zinc-300 text-[11px] font-black uppercase tracking-[0.5em]">System Archive Clean</p>
                 </div>
               )}
             </div>
-          </div>
+          </MinimalCard>
         </div>
 
-        {/* Sidebar: Quick Control */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-zinc-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-black/20 relative overflow-hidden group border border-zinc-800 h-fit">
-            <div className="absolute -bottom-10 -right-10 opacity-5 group-hover:opacity-10 transition-opacity">
-              <ShieldCheck size={200} />
-            </div>
-            <div className="relative">
-               <h3 className="text-lg font-black tracking-tighter mb-2 italic">Quick <span className="text-zinc-500">Links</span></h3>
-               <p className="text-zinc-400 text-[11px] font-medium mb-8 leading-relaxed">Rapidly deploy new content across the ecosystem.</p>
-               <div className="grid grid-cols-1 gap-3">
-                 {[
-                   { label: "New Publication", href: "/publications", icon: BookOpen },
-                   { label: "New Blog Post", href: "/blog", icon: FileText },
-                   { label: "New Event", href: "/events", icon: CalendarDays },
-                   { label: "New Project", href: "/projects", icon: FlaskConical },
-                 ].map((action) => (
-                   <Link 
-                     key={action.label}
-                     to={action.href} 
-                     className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white hover:text-black transition-all group/btn active:scale-95"
-                   >
-                     <div className="flex items-center gap-4">
-                       <action.icon size={16} className="text-zinc-500 group-hover:text-black transition-colors" />
-                       <span className="text-[10px] font-black uppercase tracking-widest">{action.label}</span>
-                     </div>
-                     <ArrowRight size={14} className="opacity-0 group-hover/btn:opacity-100 transition-all -translate-x-2 group-hover/btn:translate-x-0" />
-                   </Link>
-                 ))}
-               </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-8 shadow-sm">
-             <div className="flex items-center gap-4 mb-8">
-                <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center border border-zinc-100">
-                   <Users size={18} className="text-zinc-400" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-zinc-900 tracking-tight uppercase">Control Hub</h3>
-                  <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Global Ops</p>
-                </div>
+        {/* Sidebar: Actions */}
+        <div className="lg:col-span-4 space-y-8">
+           <MinimalCard className="p-10 bg-zinc-50/50 border-zinc-100 shadow-xl shadow-zinc-200/30">
+             <h3 className="text-[12px] font-black uppercase tracking-widest text-black mb-8">Asset Dispatch</h3>
+             <div className="space-y-3">
+               {[
+                 { label: "Add Publication", href: "/publications" },
+                 { label: "Draft Insight", href: "/blog" },
+                 { label: "Schedule Event", href: "/events" },
+                 { label: "Initiate Project", href: "/projects" },
+               ].map((action) => (
+                 <Link 
+                   key={action.label} 
+                   to={action.href} 
+                   className="block w-full text-left p-5 text-[11px] font-black bg-white border border-zinc-100 hover:border-zinc-300 hover:shadow-lg transition-all rounded-2xl uppercase tracking-widest"
+                 >
+                   {action.label}
+                 </Link>
+               ))}
              </div>
-             <p className="text-[11px] text-zinc-500 font-medium mb-6 leading-relaxed">Analyze and manage the researcher community profiles and permissions.</p>
-             <Link to="/users" className="w-full flex items-center justify-center gap-3 py-4 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-zinc-800 transition-all active:scale-95 shadow-xl shadow-black/10">
-               Member Control <ArrowRight size={14} />
-             </Link>
-          </div>
+           </MinimalCard>
+
+           <MinimalCard className="p-10 border-zinc-100 shadow-xl shadow-zinc-200/30 overflow-hidden relative group">
+             <div className="relative z-10">
+               <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-400 mb-6">User Governance</h3>
+               <p className="text-[12px] text-zinc-500 leading-relaxed font-medium mb-10">Manage personnel credentials and authorization nodes within the community.</p>
+               <Link to="/dashboard/members">
+                  <FunctionalButton className="w-full rounded-2xl shadow-2xl shadow-zinc-900/10 hover:shadow-zinc-900/20">
+                    Personnel Index
+                  </FunctionalButton>
+               </Link>
+             </div>
+             <div className="absolute -right-8 -bottom-8 opacity-5 group-hover:scale-110 transition-transform duration-700 text-zinc-900">
+               <Users size={160} />
+             </div>
+           </MinimalCard>
         </div>
       </div>
     </div>

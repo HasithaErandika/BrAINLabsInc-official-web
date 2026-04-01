@@ -12,7 +12,7 @@ import Events from "./pages/content/Events";
 import Grants from "./pages/content/Grants";
 import Projects from "./pages/content/Projects";
 import Tutorials from "./pages/content/Tutorials";
-import Users from "./pages/users/Users";
+import MemberManagement from "./pages/dashboard/MemberManagement";
 import Account from "./pages/account/Account";
 import Settings from "./pages/settings/Settings";
 
@@ -48,17 +48,17 @@ export default function App() {
             <Route path="blog" element={<Blog />} />
             
             {/* Researcher and Admin only paths */}
-            <Route path="events" element={<RoleGuard allowedRoles={["admin", "researcher"]}><Events /></RoleGuard>} />
-            <Route path="grants" element={<RoleGuard allowedRoles={["admin", "researcher"]}><Grants /></RoleGuard>} />
+            <Route path="events" element={<RoleGuard allowedRoles={["admin", "researcher", "research_assistant"]}><Events /></RoleGuard>} />
+            <Route path="grants" element={<RoleGuard allowedRoles={["admin", "researcher", "research_assistant"]}><Grants /></RoleGuard>} />
             
             <Route path="projects" element={<Projects />} />
             <Route path="tutorials" element={<Tutorials />} />
             
             <Route
-              path="users"
+              path="dashboard/members"
               element={
                 <RoleGuard allowedRoles={["admin"]}>
-                  <Users />
+                  <MemberManagement />
                 </RoleGuard>
               }
             />

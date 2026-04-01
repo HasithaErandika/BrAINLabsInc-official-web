@@ -16,6 +16,9 @@ function httpError(status, message) {
   return err;
 }
 
+/** Robust check: Supabase joins can return an object or a single-item array */
+export const getJoined = (val) => (Array.isArray(val) ? (val.length > 0 ? val[0] : null) : val);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // MEMBER + ROLE RESOLUTION
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,9 +43,6 @@ export async function getMemberWithRoleByAuthId(authUserId) {
 
   let role = 'pending';
   let roleRow = null;
-
-  // Robust check: Supabase joins can return an object or a single-item array
-  const getJoined = (val) => (Array.isArray(val) ? (val.length > 0 ? val[0] : null) : val);
 
   const adminRow = getJoined(data.admin);
   const researcherRow = getJoined(data.researcher);
@@ -86,8 +86,6 @@ export async function getMemberWithRoleById(memberId) {
 
   let role = 'pending';
   let roleRow = null;
-
-  const getJoined = (val) => (Array.isArray(val) ? (val.length > 0 ? val[0] : null) : val);
 
   const adminRow = getJoined(data.admin);
   const researcherRow = getJoined(data.researcher);

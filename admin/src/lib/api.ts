@@ -47,6 +47,8 @@ export interface Profile extends BaseMember {
     occupation?: string;
     workplace?: string;
     approval_status?: ApprovalStatus;
+    education?: EducationalBackground[];
+    ongoing_research?: OngoingResearch[];
   }
 }
 
@@ -78,6 +80,7 @@ export interface Blog {
 
 export interface Tutorial {
   id: number;
+  title: string;
   content: string;
   description: string;
   approval_status: ApprovalStatus;
@@ -90,6 +93,7 @@ export interface Project {
   id: number;
   title: string;
   description: string;
+  link?: string;
   approval_status: ApprovalStatus;
   created_at: string;
   updated_at: string;
@@ -120,11 +124,14 @@ export interface Grant {
   created_at: string;
 }
 
+export type PublicationType = 'CONFERENCE' | 'BOOK' | 'JOURNAL' | 'ARTICLE';
+
 export interface Publication {
   id: number;
   title: string;
   approval_status: ApprovalStatus;
   created_at: string;
+  type?: PublicationType;
   conference_paper?: { paper_id: string; link?: string; description?: string };
   book?: { isbn: string; link?: string; description?: string };
   journal?: { issn: string; link?: string; description?: string };
