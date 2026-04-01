@@ -13,6 +13,13 @@ CREATE TABLE member (
     created_at          TIMESTAMPTZ         DEFAULT NOW()
 );
 
+-- Identity tables are managed by the Express backend via service_role.
+ALTER TABLE member DISABLE ROW LEVEL SECURITY;
+ALTER TABLE admin DISABLE ROW LEVEL SECURITY;
+ALTER TABLE researcher DISABLE ROW LEVEL SECURITY;
+ALTER TABLE research_assistant DISABLE ROW LEVEL SECURITY;
+
+
 -- Admin is a specialisation of member (ISA)
 CREATE TABLE admin (
     member_id   INT PRIMARY KEY,

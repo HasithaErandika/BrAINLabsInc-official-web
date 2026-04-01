@@ -95,7 +95,7 @@ export default function Register() {
                     required
                     value={formData.first_name}
                     onChange={handleChange}
-                    placeholder="John"
+                    placeholder="Hasitha"
                     className="w-full bg-white border-2 border-zinc-100 px-4 py-3 text-sm transition-all focus:border-black focus:outline-none placeholder:text-zinc-200 font-medium"
                 />
             </div>
@@ -107,7 +107,7 @@ export default function Register() {
                     required
                     value={formData.second_name}
                     onChange={handleChange}
-                    placeholder="Doe"
+                    placeholder="Erandika"
                     className="w-full bg-white border-2 border-zinc-100 px-4 py-3 text-sm transition-all focus:border-black focus:outline-none placeholder:text-zinc-200 font-medium"
                 />
             </div>

@@ -1,6 +1,7 @@
 import { useAuth } from "../../hooks/useAuth";
 import { AdminDashboard } from "./AdminDashboard";
 import { ResearcherDashboard } from "./ResearcherDashboard";
+import { ResearchAssistantDashboard } from "./ResearchAssistantDashboard";
 import { Loader2, Clock, ShieldAlert } from "lucide-react";
 
 export default function Dashboard() {
@@ -40,8 +41,10 @@ export default function Dashboard() {
     <div className="p-6 lg:p-10 max-w-7xl mx-auto">
       {isAdmin() ? (
         <AdminDashboard />
-      ) : (isResearcher() || isAssistant()) ? (
+      ) : isResearcher() ? (
         <ResearcherDashboard memberId={user.id} />
+      ) : isAssistant() ? (
+        <ResearchAssistantDashboard memberId={user.id} />
       ) : (
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
           <ShieldAlert className="w-12 h-12 text-zinc-300" />

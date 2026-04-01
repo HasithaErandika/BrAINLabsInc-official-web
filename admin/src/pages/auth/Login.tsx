@@ -26,7 +26,10 @@ export default function Login() {
     const { error: authError } = await loginWithEmail(email, password);
 
     if (authError) {
-      if (authError.toLowerCase().includes('user not found') || authError.toLowerCase().includes('invalid credentials')) {
+      // If it's a specific role-related or rejection error from our backend (403), show it directly
+      if (authError.includes('Contact admin') || authError.includes('rejected')) {
+        setError(authError);
+      } else if (authError.toLowerCase().includes('user not found') || authError.toLowerCase().includes('invalid credentials')) {
         setError("Account not found in system. Contact admin.");
       } else {
         setError(authError);
@@ -89,7 +92,7 @@ export default function Login() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="wickramasinghe.erandika@gmail.com"
+              placeholder="your-email@brainlabsinc.org"
               className="w-full bg-white border-2 border-zinc-100 px-4 py-3 text-sm transition-all focus:border-black focus:outline-none placeholder:text-zinc-200"
             />
           </div>

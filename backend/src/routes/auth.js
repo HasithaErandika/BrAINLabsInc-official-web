@@ -67,9 +67,14 @@ authRouter.post('/register', async (req, res) => {
     .single();
 
   if (memberError) {
-    // Clean up auth user to avoid orphaned records
+    console.error('[RegistrationError] Member Insert:', memberError);
     await supabase.auth.admin.deleteUser(authUserId);
-    return res.status(500).json({ error: memberError.message });
+    
+    // User-friendly error mapping
+    if (memberError.code === '42501') return res.status(500).json({ error: 'Server configuration error (Security policy). Please contact admin.' });
+    if (memberError.code === '23505') return res.status(409).json({ error: 'Email or identity already exists in system.' });
+    
+    return res.status(500).json({ error: 'An unexpected error occurred during profile creation.' });
   }
 
   // 4. Insert role-specific row (approval_status defaults to PENDING)
@@ -79,8 +84,9 @@ authRouter.post('/register', async (req, res) => {
     .insert({ member_id: member.id });
 
   if (roleError) {
+    console.error('[RegistrationError] Role Insert:', roleError);
     await supabase.auth.admin.deleteUser(authUserId);
-    return res.status(500).json({ error: roleError.message });
+    return res.status(500).json({ error: 'An unexpected error occurred while assigning your role.' });
   }
 
   return res.status(201).json({
