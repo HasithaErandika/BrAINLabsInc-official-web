@@ -50,14 +50,6 @@ authRouter.post('/register', async (req, res) => {
     if (authError.message.includes('already registered')) {
       return res.status(409).json({ error: 'Email already registered' });
     }
-    // Specifically catch "This endpoint requires a valid Bearer token" from Supabase
-    // This happens when the SUPABASE_SERVICE_ROLE_KEY is invalid/non-admin.
-    if (authError.message.includes('valid Bearer token')) {
-      console.error('[Configuration Error] SUPABASE_SERVICE_ROLE_KEY is invalid or not a service_role key.');
-      return res.status(500).json({ 
-        error: 'Server configuration error: Registration service is currently misconfigured. Please contact support.' 
-      });
-    }
     return res.status(500).json({ error: authError.message });
   }
 
