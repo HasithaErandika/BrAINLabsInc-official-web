@@ -36,13 +36,13 @@ async function ownOrFail(grantId, memberId, role, res) {
 // ─── GET /grants ──────────────────────────────────────────────────────────────
 
 grantsRouter.get('/', async (req, res) => {
-  const query = supabase
+  let query = supabase
     .from('grant_info')
     .select('*')
     .order('created_at', { ascending: false });
 
   if (req.user.role !== 'admin') {
-    query.eq('created_by_researcher', req.user.sub);
+    query = query.eq('created_by_researcher', req.user.sub);
   }
 
   const { data, error } = await query;

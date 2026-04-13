@@ -35,14 +35,14 @@ async function ownOrFail(blogId, memberId, role, res) {
 // ─── GET /blogs ───────────────────────────────────────────────────────────────
 
 blogsRouter.get('/', async (req, res) => {
-  const query = supabase
+  let query = supabase
     .from('blog')
     .select('*, blog_keyword(keyword), blog_image(image_url)')
     .order('created_at', { ascending: false });
 
   // Admin sees all; others see only their own
   if (req.user.role !== 'admin') {
-    query.eq('created_by_member_id', req.user.sub);
+    query = query.eq('created_by_member_id', req.user.sub);
   }
 
   const { data, error } = await query;

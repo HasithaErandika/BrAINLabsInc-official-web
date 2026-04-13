@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Briefcase, Calendar, ShieldCheck, FileText, Hash, Info, ArrowRight } from "lucide-react";
+import { Briefcase, Calendar, ShieldCheck, FileText, ArrowRight, Info } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { api, type Grant, type ApprovalStatus } from "../../lib/api";
 import { ContentPageTemplate } from "../../components/shared/ContentPageTemplate";
@@ -30,7 +30,7 @@ export default function GrantsPage() {
     description: "",
     legal_docs: "",
     passed_date: new Date().toISOString().split('T')[0],
-    expire_date: new Date(Date.now() + 31536000000).toISOString().split('T')[0],
+    expire_date: new Date(Date.now() + 31_536_000_000).toISOString().split('T')[0],
     approval_status: "PENDING" as ApprovalStatus,
   };
 
@@ -42,15 +42,16 @@ export default function GrantsPage() {
 
   const handleToggleStatus = async (item: Grant) => {
     const newStatus = item.approval_status === "APPROVED" ? "REJECTED" : "APPROVED";
-    if (newStatus === "APPROVED") await api.admin.approveContent("grant", item.id);
-    else await api.admin.rejectContent("grant", item.id);
+    // DB table is grant_info — must match the backend route param
+    if (newStatus === "APPROVED") await api.admin.approveContent("grant_info", item.id);
+    else await api.admin.rejectContent("grant_info", item.id);
     await fetchItems();
   };
 
   return (
     <ContentPageTemplate<Grant>
       title="Grants"
-      subtitle={`${items.length} funding nodes active in the professional registry.`}
+      subtitle={`${items.length} grant${items.length !== 1 ? "s" : ""} in the registry.`}
       icon={Briefcase}
       items={items}
       loading={loading}
@@ -60,104 +61,145 @@ export default function GrantsPage() {
       onToggleStatus={isUserAdmin ? handleToggleStatus : undefined}
       searchFields={(item) => [item.title, item.description]}
       filterOptions={[
-        { label: "ALL GRANTS", value: "ALL" },
-        { label: "PUBLISHED", value: "APPROVED" },
-        { label: "PENDING", value: "PENDING" },
+        { label: "All", value: "ALL" },
+        { label: "Approved", value: "APPROVED" },
+        { label: "Pending", value: "PENDING" },
       ]}
       renderListItem={(item, onClick) => (
-        <article key={item.id} onClick={onClick} className="group relative bg-white border border-zinc-100 p-10 hover:shadow-2xl hover:shadow-zinc-200/50 transition-all duration-500 cursor-pointer flex flex-col gap-8 rounded-3xl animate-in fade-in slide-in-from-bottom-4 duration-700">
-           <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                 <div className="p-2.5 bg-zinc-900 text-white rounded-xl shadow-lg opacity-90">
-                    <Briefcase size={18} />
-                 </div>
-                 <span className="text-[11px] font-black uppercase tracking-[0.25em] text-zinc-900 border-b-2 border-zinc-900 pb-0.5">
-                    FUNDING NODE
-                 </span>
+        <article
+          key={item.id}
+          onClick={onClick}
+          className="group bg-white border border-zinc-100 rounded-2xl p-6 hover:border-zinc-200 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col gap-4"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-zinc-900 text-white rounded-lg">
+                <Briefcase size={14} />
               </div>
-              <Badge status={item.approval_status} className="rounded-full" />
-           </div>
-           <div className="flex-1 min-w-0">
-              <h3 className="text-2xl font-black text-zinc-900 leading-tight group-hover:text-black transition-all line-clamp-2 uppercase tracking-tighter">{item.title}</h3>
-              <p className="text-[11px] text-zinc-400 font-bold uppercase tracking-[0.2em] mt-6 flex items-center gap-3 bg-zinc-50 px-4 py-2 rounded-full w-fit border border-zinc-100 italic">
-                <Hash size={13} /> GNT-0X{item.id?.toString().slice(-4).toUpperCase()}
-              </p>
-           </div>
-           <div className="pt-8 border-t border-zinc-50 flex items-center justify-between">
-              <div className="text-[10px] font-black text-zinc-300 uppercase tracking-widest translate-x-2 group-hover:translate-x-0 transition-all opacity-0 group-hover:opacity-100 flex items-center gap-2">
-                 Audit Funding <ArrowRight size={12} />
-              </div>
-           </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Grant</span>
+            </div>
+            <Badge status={item.approval_status} />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-base font-black text-zinc-900 leading-snug line-clamp-2 mb-1.5">{item.title}</h3>
+            {item.description && (
+              <p className="text-sm text-zinc-500 font-medium line-clamp-2">{item.description}</p>
+            )}
+          </div>
+          <div className="pt-3 border-t border-zinc-50 flex items-center justify-between">
+            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
+              {item.passed_date} — {item.expire_date}
+            </span>
+            <ArrowRight size={14} className="text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
         </article>
       )}
       renderDetail={(item) => (
-        <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-               <div className="p-10 bg-white border border-zinc-100 rounded-3xl shadow-xl shadow-zinc-200/30">
-                  <div className="flex items-center gap-4 mb-6 text-zinc-300">
-                     <ShieldCheck size={20} />
-                     <span className="text-[11px] font-black uppercase tracking-[0.3em]">Governance Hub</span>
-                  </div>
-                  <p className="text-xl font-black text-black uppercase tracking-tighter">{item.approval_status}</p>
-               </div>
-               <div className="p-10 bg-white border border-zinc-100 rounded-3xl shadow-xl shadow-zinc-200/30">
-                  <div className="flex items-center gap-4 mb-6 text-zinc-300">
-                     <Calendar size={20} />
-                     <span className="text-[11px] font-black uppercase tracking-[0.3em]">Award Window</span>
-                  </div>
-                  <p className="text-xl font-black text-black uppercase tracking-tighter">{item.passed_date} — {item.expire_date}</p>
-               </div>
-               <div className="p-10 bg-white border border-zinc-100 rounded-3xl shadow-xl shadow-zinc-200/30 flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-4 mb-6 text-zinc-300">
-                       <FileText size={20} />
-                       <span className="text-[11px] font-black uppercase tracking-[0.3em]">Legal Docs Hub</span>
-                    </div>
-                    <p className="text-sm font-black text-zinc-900 uppercase">{item.legal_docs ? "Registry Ready" : "Unset"}</p>
-                  </div>
-               </div>
+        <div className="space-y-10 animate-in fade-in duration-300">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-6 bg-zinc-50 border border-zinc-100 rounded-2xl">
+              <div className="flex items-center gap-2 mb-3 text-zinc-400">
+                <ShieldCheck size={14} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Status</span>
+              </div>
+              <Badge status={item.approval_status} />
             </div>
-
-            <div className="space-y-10">
-               <h4 className="text-[14px] font-black text-black uppercase tracking-[0.5em] flex items-center gap-4 border-b border-zinc-100 pb-4 w-fit">
-                 <Info size={20} className="text-zinc-900" /> Archival Description
-               </h4>
-               <div className="p-14 bg-zinc-50/50 border border-zinc-100 text-zinc-600 leading-relaxed font-medium italic text-lg rounded-[2.5rem] shadow-inner">
-                 {item.description || "No technical description node associated with this grant identity Archive cluster."}
-               </div>
+            <div className="p-6 bg-zinc-50 border border-zinc-100 rounded-2xl">
+              <div className="flex items-center gap-2 mb-3 text-zinc-400">
+                <Calendar size={14} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Award date</span>
+              </div>
+              <p className="text-sm font-bold text-black">{item.passed_date}</p>
             </div>
+            <div className="p-6 bg-zinc-50 border border-zinc-100 rounded-2xl">
+              <div className="flex items-center gap-2 mb-3 text-zinc-400">
+                <Calendar size={14} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Expiry date</span>
+              </div>
+              <p className="text-sm font-bold text-black">{item.expire_date}</p>
+            </div>
+          </div>
 
-            {item.legal_docs && (
-               <div className="flex items-center justify-center pt-8">
-                  <a href={item.legal_docs} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-6 px-12 py-6 bg-zinc-900 text-white text-[13px] font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-black transition-all shadow-2xl shadow-zinc-900/20 active:scale-95">
-                    <FileText size={20} className="group-hover:rotate-12 transition-transform" /> Execute Governance Document
-                  </a>
-               </div>
-            )}
+          {item.description && (
+            <div className="space-y-3">
+              <h4 className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                <Info size={14} /> Description
+              </h4>
+              <p className="text-base text-zinc-600 font-medium leading-relaxed">{item.description}</p>
+            </div>
+          )}
+
+          {item.legal_docs && (
+            <div className="pt-4">
+              <a
+                href={item.legal_docs}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-zinc-900 text-white text-[11px] font-bold uppercase tracking-widest rounded-xl hover:bg-black transition-colors"
+              >
+                <FileText size={14} /> View legal document
+              </a>
+            </div>
+          )}
         </div>
       )}
       renderEdit={(item, setItem) => (
-        <div className="space-y-16">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-               <FormField label="Identifier Identification" full><FormInput placeholder="Registry Title Identification node..." value={item.title} onChange={e => setItem({...item, title: e.target.value})} className="rounded-2xl" /></FormField>
-               <FormField label="Archival Award Date"><FormInput type="date" value={item.passed_date} onChange={e => setItem({...item, passed_date: e.target.value})} className="rounded-2xl" /></FormField>
-               <FormField label="Archival Expiry Date"><FormInput type="date" value={item.expire_date} onChange={e => setItem({...item, expire_date: e.target.value})} className="rounded-2xl" /></FormField>
-               <FormField label="Legal Documentation Index" full><FormInput placeholder="https://external-node-id..." value={item.legal_docs} onChange={e => setItem({...item, legal_docs: e.target.value})} className="rounded-2xl" /></FormField>
-               
-               <FormField label="Registry Status Hub" full={isUserAdmin}>
-                  <FormSelect 
-                    value={item.approval_status || "PENDING"} 
-                    onChange={e => setItem({ ...item, approval_status: e.target.value as ApprovalStatus })}
-                    className="rounded-2xl"
-                    options={[
-                      { label: "PENDING MODERATION Cluster", value: "PENDING" },
-                      ...(isUserAdmin ? [{ label: "AUTHORIZE GRANT Cluster", value: "APPROVED" }, { label: "INVALIDATE GRANT Cluster", value: "REJECTED" }] : [])
-                    ]}
-                  />
-               </FormField>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField label="Title" full>
+              <FormInput
+                placeholder="Grant title..."
+                value={item.title ?? ""}
+                onChange={e => setItem({ ...item, title: e.target.value })}
+              />
+            </FormField>
 
-               <FormField label="Archival Description Abstract" full><FormTextArea className="min-h-[220px] rounded-3xl" placeholder="Full grant context node identification..." value={item.description} onChange={e => setItem({...item, description: e.target.value})} /></FormField>
-            </div>
+            <FormField label="Award date">
+              <FormInput
+                type="date"
+                value={item.passed_date ?? ""}
+                onChange={e => setItem({ ...item, passed_date: e.target.value })}
+              />
+            </FormField>
+
+            <FormField label="Expiry date">
+              <FormInput
+                type="date"
+                value={item.expire_date ?? ""}
+                onChange={e => setItem({ ...item, expire_date: e.target.value })}
+              />
+            </FormField>
+
+            <FormField label="Legal document URL">
+              <FormInput
+                placeholder="https://..."
+                value={item.legal_docs ?? ""}
+                onChange={e => setItem({ ...item, legal_docs: e.target.value })}
+              />
+            </FormField>
+
+            <FormField label="Status" full={isUserAdmin}>
+              <FormSelect
+                value={item.approval_status || "PENDING"}
+                onChange={e => setItem({ ...item, approval_status: e.target.value as ApprovalStatus })}
+                options={[
+                  { label: "Pending", value: "PENDING" },
+                  ...(isUserAdmin
+                    ? [{ label: "Approved", value: "APPROVED" }, { label: "Rejected", value: "REJECTED" }]
+                    : []),
+                ]}
+              />
+            </FormField>
+
+            <FormField label="Description" full>
+              <FormTextArea
+                className="min-h-[180px]"
+                placeholder="Grant description and scope..."
+                value={item.description ?? ""}
+                onChange={e => setItem({ ...item, description: e.target.value })}
+              />
+            </FormField>
+          </div>
         </div>
       )}
     />

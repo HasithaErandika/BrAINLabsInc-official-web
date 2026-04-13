@@ -132,7 +132,6 @@ authRouter.post('/login', async (req, res) => {
   }
 
   const { member, role, roleRow } = memberData;
-  const isPendingOrRejected = roleRow?.approval_status === 'PENDING' || roleRow?.approval_status === 'REJECTED';
 
   // 3. Handle status-based access (Admins are implicitly approved)
   if (role !== 'admin' && roleRow?.approval_status === 'REJECTED') {

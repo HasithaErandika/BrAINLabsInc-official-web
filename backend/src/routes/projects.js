@@ -33,13 +33,13 @@ async function ownOrFail(projId, memberId, role, res) {
 // ─── GET /projects ────────────────────────────────────────────────────────────
 
 projectsRouter.get('/', async (req, res) => {
-  const query = supabase
+  let query = supabase
     .from('project')
     .select('*, project_diagram(diagram_url)')
     .order('created_at', { ascending: false });
 
   if (req.user.role !== 'admin') {
-    query.eq('created_by_member_id', req.user.sub);
+    query = query.eq('created_by_member_id', req.user.sub);
   }
 
   const { data, error } = await query;

@@ -21,19 +21,6 @@ const EventSchema = z.object({
 
 const ImageSchema = z.object({ image_url: z.string().url().max(255) });
 
-// ─── Helper: resolve researcher member_id ─────────────────────────────────────
-
-async function getResearcherMemberId(userId) {
-  // For admin, sub is their member_id but they don't have a researcher row
-  // Events use created_by_researcher FK → researcher.member_id
-  const { data } = await supabase
-    .from('researcher')
-    .select('member_id')
-    .eq('member_id', userId)
-    .single();
-  return data?.member_id ?? null;
-}
-
 // ─── Helper: own-or-admin check ───────────────────────────────────────────────
 
 async function ownOrFail(eventId, memberId, role, res) {
@@ -52,13 +39,13 @@ async function ownOrFail(eventId, memberId, role, res) {
 // ─── GET /events ──────────────────────────────────────────────────────────────
 
 eventsRouter.get('/', async (req, res) => {
-  const query = supabase
+  let query = supabase
     .from('event')
     .select('*, event_image(image_url)')
     .order('event_date', { ascending: true });
 
   if (req.user.role !== 'admin') {
-    query.eq('created_by_researcher', req.user.sub);
+    query = query.eq('created_by_researcher', req.user.sub);
   }
 
   const { data, error } = await query;

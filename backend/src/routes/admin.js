@@ -1,8 +1,14 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { supabase } from '../config/supabase.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireRole } from '../middleware/requireRole.js';
 import { getJoined, approveContent, rejectContent, getAllPendingContent } from '../db/queries.js';
+
+const ResignSchema = z.object({
+  resign_date:          z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
+  working_period_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
+});
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole('admin'));
@@ -66,9 +72,14 @@ adminRouter.get('/members/:id', async (req, res) => {
 
   let role = 'pending';
   let roleDetail = null;
-  if (data.admin) { role = 'admin'; roleDetail = data.admin; }
-  else if (data.researcher) { role = 'researcher'; roleDetail = data.researcher; }
-  else if (data.research_assistant) { role = 'research_assistant'; roleDetail = data.research_assistant; }
+
+  const adminRow = getJoined(data.admin);
+  const researcherRow = getJoined(data.researcher);
+  const raRow = getJoined(data.research_assistant);
+
+  if (adminRow) { role = 'admin'; roleDetail = adminRow; }
+  else if (researcherRow) { role = 'researcher'; roleDetail = researcherRow; }
+  else if (raRow) { role = 'research_assistant'; roleDetail = raRow; }
 
   const { admin, researcher, research_assistant, ...base } = data;
   res.json({ ...base, role, role_detail: roleDetail });
@@ -132,11 +143,11 @@ adminRouter.patch('/members/:id/reject', async (req, res) => {
 adminRouter.post('/members/:id/resign', async (req, res) => {
   const memberId = Number(req.params.id);
   const adminMemberId = req.user.sub;
-  const { resign_date, working_period_start } = req.body;
 
-  if (!resign_date || !working_period_start) {
-    return res.status(400).json({ error: 'resign_date and working_period_start are required' });
-  }
+  const parsed = ResignSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+  const { resign_date, working_period_start } = parsed.data;
 
   // Determine former role
   const { data: researcher } = await supabase.from('researcher').select('member_id').eq('member_id', memberId).single();

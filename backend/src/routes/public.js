@@ -47,6 +47,24 @@ publicRouter.get('/researchers/:slug', async (req, res) => {
 
 // ─── GET /public/blogs ────────────────────────────────────────────────────────
 
+publicRouter.get('/blogs/:id', async (req, res) => {
+  const { data, error } = await supabase
+    .from('blog')
+    .select(`
+      id, title, content, description, created_at, updated_at,
+      member:created_by_member_id ( id, first_name, second_name, slug ),
+      former_member:created_by_former_member_id ( member_id, former_role ),
+      blog_keyword ( id, keyword ),
+      blog_image ( id, image_url )
+    `)
+    .eq('id', req.params.id)
+    .eq('approval_status', 'APPROVED')
+    .single();
+
+  if (error || !data) return res.status(404).json({ error: 'Blog not found' });
+  res.json(data);
+});
+
 publicRouter.get('/blogs', async (_req, res) => {
   const { data, error } = await supabase
     .from('blog')
@@ -66,6 +84,22 @@ publicRouter.get('/blogs', async (_req, res) => {
 
 // ─── GET /public/tutorials ────────────────────────────────────────────────────
 
+publicRouter.get('/tutorials/:id', async (req, res) => {
+  const { data, error } = await supabase
+    .from('tutorial')
+    .select(`
+      id, content, description, created_at, updated_at,
+      member:created_by_member_id ( id, first_name, second_name, slug ),
+      tutorial_image ( id, image_url )
+    `)
+    .eq('id', req.params.id)
+    .eq('approval_status', 'APPROVED')
+    .single();
+
+  if (error || !data) return res.status(404).json({ error: 'Tutorial not found' });
+  res.json(data);
+});
+
 publicRouter.get('/tutorials', async (_req, res) => {
   const { data, error } = await supabase
     .from('tutorial')
@@ -82,6 +116,22 @@ publicRouter.get('/tutorials', async (_req, res) => {
 });
 
 // ─── GET /public/projects ─────────────────────────────────────────────────────
+
+publicRouter.get('/projects/:id', async (req, res) => {
+  const { data, error } = await supabase
+    .from('project')
+    .select(`
+      id, title, description, created_at, updated_at,
+      member:created_by_member_id ( id, first_name, second_name, slug ),
+      project_diagram ( id, diagram_url )
+    `)
+    .eq('id', req.params.id)
+    .eq('approval_status', 'APPROVED')
+    .single();
+
+  if (error || !data) return res.status(404).json({ error: 'Project not found' });
+  res.json(data);
+});
 
 publicRouter.get('/projects', async (_req, res) => {
   const { data, error } = await supabase
@@ -100,6 +150,22 @@ publicRouter.get('/projects', async (_req, res) => {
 
 // ─── GET /public/events ───────────────────────────────────────────────────────
 
+publicRouter.get('/events/:id', async (req, res) => {
+  const { data, error } = await supabase
+    .from('event')
+    .select(`
+      id, title, description, event_date, event_time, premises, host, created_at,
+      researcher:created_by_researcher ( member_id, member ( first_name, second_name, slug ) ),
+      event_image ( id, image_url )
+    `)
+    .eq('id', req.params.id)
+    .eq('approval_status', 'APPROVED')
+    .single();
+
+  if (error || !data) return res.status(404).json({ error: 'Event not found' });
+  res.json(data);
+});
+
 publicRouter.get('/events', async (_req, res) => {
   const { data, error } = await supabase
     .from('event')
@@ -116,6 +182,25 @@ publicRouter.get('/events', async (_req, res) => {
 });
 
 // ─── GET /public/publications ─────────────────────────────────────────────────
+
+publicRouter.get('/publications/:id', async (req, res) => {
+  const { data, error } = await supabase
+    .from('publication')
+    .select(`
+      id, title, created_at,
+      member:created_by_member_id ( id, first_name, second_name, slug ),
+      conference_paper ( paper_id, link, description ),
+      book ( isbn, link, description ),
+      journal ( issn, link, description ),
+      article ( doi, link, description )
+    `)
+    .eq('id', req.params.id)
+    .eq('approval_status', 'APPROVED')
+    .single();
+
+  if (error || !data) return res.status(404).json({ error: 'Publication not found' });
+  res.json(data);
+});
 
 publicRouter.get('/publications', async (_req, res) => {
   const { data, error } = await supabase

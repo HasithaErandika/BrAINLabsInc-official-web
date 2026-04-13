@@ -63,7 +63,7 @@ async function ownOrFail(pubId, memberId, role, res) {
 // ─── GET /publications ────────────────────────────────────────────────────────
 
 publicationsRouter.get('/', async (req, res) => {
-  const query = supabase
+  let query = supabase
     .from('publication')
     .select(`
       *,
@@ -75,7 +75,7 @@ publicationsRouter.get('/', async (req, res) => {
     .order('created_at', { ascending: false });
 
   if (req.user.role !== 'admin') {
-    query.eq('created_by_member_id', req.user.sub);
+    query = query.eq('created_by_member_id', req.user.sub);
   }
 
   const { data, error } = await query;

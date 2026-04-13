@@ -22,6 +22,27 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Guard to prevent multiple concurrent 401 handling (avoids infinite redirect loop)
+let is401Handling = false;
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const url: string = error.config?.url ?? '';
+    const isAuthRoute = url.includes('/auth/login') || url.includes('/auth/register');
+
+    if (error.response?.status === 401 && !isAuthRoute && !is401Handling) {
+      is401Handling = true;
+      localStorage.removeItem('brain_labs_token');
+      localStorage.removeItem('brain_labs_auth');
+      // Use a DOM event so React Router handles navigation (no full-page reload)
+      window.dispatchEvent(new CustomEvent('brain:session-expired'));
+      setTimeout(() => { is401Handling = false; }, 5_000);
+    }
+    return Promise.reject(error);
+  }
+);
+
 // ─── Types (aligned to schema(2).sql) ────────────────────────────────────────
 
 export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -93,7 +114,6 @@ export interface Project {
   id: number;
   title: string;
   description: string;
-  link?: string;
   approval_status: ApprovalStatus;
   created_at: string;
   updated_at: string;
@@ -129,6 +149,8 @@ export type PublicationType = 'CONFERENCE' | 'BOOK' | 'JOURNAL' | 'ARTICLE';
 export interface Publication {
   id: number;
   title: string;
+  authors?: string;
+  publication_year?: number;
   approval_status: ApprovalStatus;
   created_at: string;
   type?: PublicationType;

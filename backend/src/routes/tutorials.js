@@ -33,13 +33,13 @@ async function ownOrFail(tutId, memberId, role, res) {
 // ─── GET /tutorials ───────────────────────────────────────────────────────────
 
 tutorialsRouter.get('/', async (req, res) => {
-  const query = supabase
+  let query = supabase
     .from('tutorial')
     .select('*, tutorial_image(image_url)')
     .order('created_at', { ascending: false });
 
   if (req.user.role !== 'admin') {
-    query.eq('created_by_member_id', req.user.sub);
+    query = query.eq('created_by_member_id', req.user.sub);
   }
 
   const { data, error } = await query;

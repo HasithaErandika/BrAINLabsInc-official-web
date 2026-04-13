@@ -67,45 +67,6 @@ export async function getMemberWithRoleByAuthId(authUserId) {
   return { member, role, roleRow };
 }
 
-/**
- * Resolve a member's full profile + role from their member.id (integer).
- */
-export async function getMemberWithRoleById(memberId) {
-  const { data, error } = await supabase
-    .from('member')
-    .select(`
-      *,
-      admin ( member_id ),
-      researcher ( member_id, country, linkedin_url, image_url, bio, occupation, workplace, approval_status, approved_by_admin_id ),
-      research_assistant ( member_id, assigned_by_researcher_id, approval_status, approved_by_admin_id )
-    `)
-    .eq('id', memberId)
-    .single();
-
-  if (error || !data) throw httpError(404, 'Member not found');
-
-  let role = 'pending';
-  let roleRow = null;
-
-  const adminRow = getJoined(data.admin);
-  const researcherRow = getJoined(data.researcher);
-  const raRow = getJoined(data.research_assistant);
-
-  if (adminRow) {
-    role = 'admin';
-    roleRow = adminRow;
-  } else if (researcherRow) {
-    role = 'researcher';
-    roleRow = researcherRow;
-  } else if (raRow) {
-    role = 'research_assistant';
-    roleRow = raRow;
-  }
-
-  const { admin, researcher, research_assistant, ...member } = data;
-  return { member, role, roleRow };
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // CONTENT HELPERS (generic approval)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -155,15 +116,6 @@ export async function getAllPendingContent() {
 // EDUCATIONAL BACKGROUND
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function getEducationByResearcher(researcherId) {
-  const { data, error } = await supabase
-    .from('educational_background')
-    .select('*')
-    .eq('researcher_id', researcherId);
-  if (error) throw httpError(500, error.message);
-  return data;
-}
-
 export async function addEducation(researcherId, degree) {
   const { data, error } = await supabase
     .from('educational_background')
@@ -186,15 +138,6 @@ export async function deleteEducation(id, researcherId) {
 // ─────────────────────────────────────────────────────────────────────────────
 // ONGOING RESEARCH
 // ─────────────────────────────────────────────────────────────────────────────
-
-export async function getOngoingResearch(researcherId) {
-  const { data, error } = await supabase
-    .from('ongoing_research')
-    .select('*')
-    .eq('researcher_id', researcherId);
-  if (error) throw httpError(500, error.message);
-  return data;
-}
 
 export async function addOngoingResearch(researcherId, title) {
   const { data, error } = await supabase

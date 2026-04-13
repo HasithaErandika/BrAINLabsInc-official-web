@@ -49,7 +49,7 @@ export default function BlogPage() {
   return (
     <ContentPageTemplate<Blog>
       title="Articles"
-      subtitle={`${items.length} technical insights archived in the professional registry.`}
+      subtitle={`${items.length} blog post${items.length !== 1 ? "s" : ""} in the registry.`}
       icon={BookOpen}
       items={items}
       loading={loading}
@@ -59,49 +59,52 @@ export default function BlogPage() {
       onToggleStatus={isUserAdmin ? handleToggleStatus : undefined}
       searchFields={(item) => [item.title, item.description]}
       filterOptions={[
-        { label: "ALL INDEX", value: "ALL" },
-        { label: "PUBLISHED", value: "APPROVED" },
-        { label: "PENDING", value: "PENDING" },
+        { label: "All", value: "ALL" },
+        { label: "Approved", value: "APPROVED" },
+        { label: "Pending", value: "PENDING" },
       ]}
       renderListItem={(item, onClick) => (
         <article 
           key={item.id} 
           onClick={onClick}
-          className="group relative bg-white border border-zinc-100 p-10 hover:shadow-2xl hover:shadow-zinc-200/50 transition-all duration-500 cursor-pointer flex flex-col gap-8 rounded-3xl animate-in fade-in slide-in-from-bottom-4 duration-700"
+          className="group bg-white border border-zinc-100 rounded-2xl p-6 hover:border-zinc-200 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col gap-5"
         >
-          <div className="flex items-start justify-between">
-             <div className="flex items-center gap-4">
-                <div className="p-2.5 bg-zinc-900 text-white rounded-xl shadow-lg opacity-90">
-                   <ImageIcon size={18} />
-                </div>
-                <span className="text-[11px] font-black uppercase tracking-[0.3em] text-zinc-900 border-b-2 border-zinc-900 pb-0.5">
-                   TECHNICAL INSIGHT
-                </span>
-             </div>
-             <Badge status={item.approval_status} className="rounded-full" />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-2 bg-zinc-900 text-white rounded-lg flex-shrink-0">
+                <ImageIcon size={14} />
+              </div>
+              <div className="flex items-center gap-2 text-[11px] font-medium text-zinc-400 min-w-0">
+                <Calendar size={12} />
+                <span>{new Date(item.created_at).toLocaleDateString()}</span>
+              </div>
+            </div>
+            <Badge status={item.approval_status} />
           </div>
-          <div className="flex-1 min-w-0">
-             <div className="flex items-center gap-2 mb-6 text-[11px] font-bold text-zinc-400 uppercase tracking-widest leading-none bg-zinc-50 px-3 py-1.5 rounded-full w-fit">
-                <Calendar size={13} /> {new Date(item.created_at).toLocaleDateString()}
-             </div>
-             <h2 className="text-2xl font-black text-zinc-900 leading-tight group-hover:text-black transition-all line-clamp-2 uppercase tracking-tighter">{item.title}</h2>
-             <p className="text-[13px] font-medium text-zinc-500 leading-relaxed line-clamp-2 mt-6">{item.description || "No summary node provided for this index entry."}</p>
+          <div className="flex-1">
+            <h2 className="text-base font-black text-zinc-900 leading-snug line-clamp-2 mb-1.5">{item.title}</h2>
+            <p className="text-sm text-zinc-500 font-medium leading-relaxed line-clamp-2">
+              {item.description || "No description provided."}
+            </p>
           </div>
-          <div className="pt-10 border-t border-zinc-50 flex items-center justify-between">
-             <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-widest text-zinc-900 opacity-80 group-hover:opacity-100 transition-opacity">
-                Execute Read <ExternalLink size={14} />
-             </div>
-             <div className="text-[10px] font-black text-zinc-300 uppercase tracking-[0.2em] translate-x-2 group-hover:translate-x-0 transition-opacity opacity-0 group-hover:opacity-100 flex items-center gap-2">
-                Open node <ArrowRight size={12} />
-             </div>
+          <div className="pt-4 border-t border-zinc-50 flex items-center justify-between">
+            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1.5">
+              <ExternalLink size={12} /> Read
+            </span>
+            <ArrowRight
+              size={14}
+              className="text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity group-hover:translate-x-0.5 transition-transform"
+            />
           </div>
         </article>
       )}
       renderDetail={(item) => (
         <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
-           <div className="p-14 bg-zinc-50/50 border border-zinc-100 rounded-[2.5rem] italic text-xl text-zinc-600 leading-relaxed font-medium shadow-inner">
+           {item.description && (
+            <div className="p-8 bg-zinc-50 border border-zinc-100 rounded-2xl italic text-base text-zinc-600 leading-relaxed font-medium">
               "{item.description}"
-           </div>
+            </div>
+          )}
            <div className="space-y-10 md-content border-t border-zinc-100 pt-16 text-zinc-900 leading-loose">
               {renderMarkdown(item.content || "")}
            </div>
@@ -110,41 +113,40 @@ export default function BlogPage() {
       renderEdit={(item, setItem) => (
         <div className="space-y-16">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <FormField label="Internal Label" full>
-              <FormInput 
-                placeholder="Technical Article identification..." 
+            <FormField label="Title" full>
+              <FormInput
+                placeholder="Blog post title..."
                 value={item.title || ""} 
                 onChange={e => setItem({ ...item, title: e.target.value })}
                 className="rounded-2xl"
               />
             </FormField>
             
-            <FormField label="Registry Status" full={isUserAdmin}>
+            <FormField label="Status" full={isUserAdmin}>
               <FormSelect 
                 value={item.approval_status || "PENDING"} 
                 onChange={e => setItem({ ...item, approval_status: e.target.value as ApprovalStatus })}
                 className="rounded-2xl"
                 options={[
-                  { label: "PENDING REVIEW Hub", value: "PENDING" },
-                  { label: "LOCAL DRAFT Node", value: "DRAFT" },
-                  ...(isUserAdmin ? [{ label: "AUTHORIZE ENTRY Node", value: "APPROVED" }, { label: "INVALIDATE ENTRY Node", value: "REJECTED" }] : [])
+                  { label: "PENDING REVIEW", value: "PENDING" },
+                  ...(isUserAdmin ? [{ label: "APPROVED", value: "APPROVED" }, { label: "REJECTED", value: "REJECTED" }] : [])
                 ]}
               />
             </FormField>
 
-            <FormField label="Operational Abstract" full>
-               <FormTextArea 
-                 placeholder="Brief hook for the insight registry node..." 
+            <FormField label="Description" full>
+               <FormTextArea
+                 placeholder="A short summary of this blog post..."
                  value={item.description || ""}
                  onChange={e => setItem({ ...item, description: e.target.value })}
                  className="rounded-3xl min-h-[160px]"
                />
             </FormField>
 
-            <FormField label="Full Technical Payload (Markdown)" full>
-              <FormTextArea 
-                className="min-h-[500px] font-mono text-sm leading-loose border-2 rounded-3xl"
-                placeholder="# Initialize technical narrative body..." 
+            <FormField label="Content (Markdown)" full>
+              <FormTextArea
+                className="min-h-[500px] font-mono text-sm leading-loose border-2 rounded-xl"
+                placeholder="# Start writing..."
                 value={item.content || ""}
                 onChange={e => setItem({ ...item, content: e.target.value })}
               />

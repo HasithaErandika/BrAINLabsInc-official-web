@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CalendarDays, MapPin, Clock, Users, Info } from "lucide-react";
+import { CalendarDays, MapPin, Clock, Users, Info, ArrowRight } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { api, type Event, type ApprovalStatus } from "../../lib/api";
 import { ContentPageTemplate } from "../../components/shared/ContentPageTemplate";
@@ -51,7 +51,7 @@ export default function EventsPage() {
   return (
     <ContentPageTemplate<Event>
       title="Events"
-      subtitle={`${items.length} summits and research sessions indexed in the professional registry.`}
+      subtitle={`${items.length} event${items.length !== 1 ? "s" : ""} in the registry.`}
       icon={CalendarDays}
       items={items}
       loading={loading}
@@ -66,99 +66,98 @@ export default function EventsPage() {
         { label: "PENDING", value: "PENDING" },
       ]}
       renderListItem={(item, onClick) => (
-        <article key={item.id} onClick={onClick} className="group relative bg-white border border-zinc-100 p-10 hover:shadow-2xl hover:shadow-zinc-200/50 transition-all duration-500 cursor-pointer flex flex-col gap-8 rounded-3xl animate-in fade-in slide-in-from-bottom-4 duration-700">
-           <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                 <div className="p-2.5 bg-zinc-900 text-white rounded-xl shadow-lg opacity-90">
-                    <CalendarDays size={18} />
-                 </div>
-                 <span className="text-[11px] font-black uppercase tracking-[0.25em] text-zinc-900 border-b-2 border-zinc-900 pb-0.5">
-                    {item.event_date}
-                 </span>
+        <article key={item.id} onClick={onClick} className="group bg-white border border-zinc-100 rounded-2xl p-6 hover:border-zinc-200 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-zinc-900 text-white rounded-lg">
+                <CalendarDays size={14} />
               </div>
-              <Badge status={item.approval_status} className="rounded-full" />
-           </div>
-           <div className="flex-1 min-w-0">
-              <h3 className="text-2xl font-black text-zinc-900 leading-tight group-hover:text-black transition-all line-clamp-2 uppercase tracking-tighter">{item.title}</h3>
-              <p className="text-[11px] text-zinc-400 font-bold uppercase tracking-[0.2em] mt-6 flex items-center gap-3 bg-zinc-50 px-4 py-2 rounded-full w-fit border border-zinc-100 italic">
-                <MapPin size={13} /> {item.premises} <span className="mx-1 opacity-20">/</span> NODE-0X{item.id?.toString().slice(-4).toUpperCase()}
-              </p>
-           </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{item.event_date}</span>
+            </div>
+            <Badge status={item.approval_status} />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-base font-black text-zinc-900 leading-snug line-clamp-2 mb-1.5">{item.title}</h3>
+            <p className="text-[11px] text-zinc-400 font-medium flex items-center gap-1.5">
+              <MapPin size={11} /> {item.premises}
+            </p>
+          </div>
+          <div className="pt-3 border-t border-zinc-50 flex items-center justify-between">
+            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">{item.event_time}</span>
+            <ArrowRight size={14} className="text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
         </article>
       )}
       renderDetail={(item) => (
-        <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-               <div className="p-10 bg-white border border-zinc-100 rounded-3xl shadow-xl shadow-zinc-200/30">
-                  <div className="flex items-center gap-4 mb-6 text-zinc-300">
-                     <MapPin size={20} />
-                     <span className="text-[11px] font-black uppercase tracking-[0.3em]">Operational Premises</span>
-                  </div>
-                  <p className="text-xl font-black text-black uppercase tracking-tighter">{item.premises}</p>
-               </div>
-               <div className="p-10 bg-white border border-zinc-100 rounded-3xl shadow-xl shadow-zinc-200/30">
-                  <div className="flex items-center gap-4 mb-6 text-zinc-300">
-                     <Clock size={20} />
-                     <span className="text-[11px] font-black uppercase tracking-[0.3em]">Scheduled Window</span>
-                  </div>
-                  <p className="text-xl font-black text-black uppercase tracking-tighter">{item.event_time}</p>
-               </div>
-               <div className="p-10 bg-white border border-zinc-100 rounded-3xl shadow-xl shadow-zinc-200/30 flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-4 mb-6 text-zinc-300">
-                       <Users size={20} />
-                       <span className="text-[11px] font-black uppercase tracking-[0.3em]">Moderation Status</span>
-                    </div>
-                    <Badge status={item.approval_status} className="rounded-full" />
-                  </div>
-               </div>
+        <div className="space-y-10 animate-in fade-in duration-300">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-6 bg-zinc-50 border border-zinc-100 rounded-2xl">
+              <div className="flex items-center gap-2 mb-3 text-zinc-400">
+                <MapPin size={14} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Venue</span>
+              </div>
+              <p className="text-base font-black text-black">{item.premises}</p>
             </div>
+            <div className="p-6 bg-zinc-50 border border-zinc-100 rounded-2xl">
+              <div className="flex items-center gap-2 mb-3 text-zinc-400">
+                <Clock size={14} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Time</span>
+              </div>
+              <p className="text-base font-black text-black">{item.event_time}</p>
+            </div>
+            <div className="p-6 bg-zinc-50 border border-zinc-100 rounded-2xl">
+              <div className="flex items-center gap-2 mb-3 text-zinc-400">
+                <Users size={14} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Host</span>
+              </div>
+              <p className="text-base font-black text-black">{item.host}</p>
+            </div>
+          </div>
 
-            <div className="space-y-10">
-               <h4 className="text-[14px] font-black text-black uppercase tracking-[0.5em] flex items-center gap-4 border-b border-zinc-100 pb-4 w-fit">
-                 <Info size={20} className="text-zinc-900" /> Operational Briefing
-               </h4>
-               <div className="p-14 bg-zinc-50/50 border border-zinc-100 text-zinc-600 leading-relaxed font-medium italic text-lg rounded-[2.5rem] shadow-inner">
-                 {item.description || "No technical briefing associated with this event node Archive data cluster."}
-               </div>
+          {item.description && (
+            <div className="space-y-3">
+              <h4 className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                <Info size={14} /> Description
+              </h4>
+              <p className="text-base text-zinc-600 font-medium leading-relaxed">
+                {item.description}
+              </p>
             </div>
-            
-            <div className="flex items-center justify-center pt-8">
-               <div className="p-12 border border-dashed border-zinc-200 rounded-[3rem] w-full max-w-2xl text-center flex flex-col items-center gap-6 group hover:border-zinc-400 transition-all">
-                  <div className="p-6 bg-zinc-50 text-zinc-200 rounded-full group-hover:bg-zinc-900 group-hover:text-white transition-all shadow-inner">
-                    <CalendarDays size={48} />
-                  </div>
-                  <div>
-                    <h5 className="text-[11px] font-black uppercase tracking-[0.5em] text-zinc-300 mb-2">Network Synchronization</h5>
-                    <p className="text-xl font-black text-zinc-900 uppercase">Synchronize with Global Event Cluster</p>
-                  </div>
-               </div>
-            </div>
+          )}
         </div>
       )}
       renderEdit={(item, setItem) => (
-        <div className="space-y-16">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-               <FormField label="Event Identification" full><FormInput placeholder="Registry Title identification..." value={item.title} onChange={e => setItem({...item, title: e.target.value})} className="rounded-2xl" /></FormField>
-               <FormField label="System Premises Matrix"><FormInput placeholder="Operational Hub location..." value={item.premises} onChange={e => setItem({...item, premises: e.target.value})} className="rounded-2xl" /></FormField>
-               <FormField label="Node Primary Host"><FormInput placeholder="Registry Host node..." value={item.host} onChange={e => setItem({...item, host: e.target.value})} className="rounded-2xl" /></FormField>
-               <FormField label="Archival Window Date"><FormInput type="date" value={item.event_date} onChange={e => setItem({...item, event_date: e.target.value})} className="rounded-2xl" /></FormField>
-               <FormField label="Archival Window Time"><FormInput type="time" value={item.event_time} onChange={e => setItem({...item, event_time: e.target.value})} className="rounded-2xl" /></FormField>
-               
-               <FormField label="Registry Status Node" full={isUserAdmin}>
-                  <FormSelect 
-                    value={item.approval_status || "PENDING"} 
-                    onChange={e => setItem({ ...item, approval_status: e.target.value as ApprovalStatus })}
-                    className="rounded-2xl"
-                    options={[
-                      { label: "PENDING MODERATION Hub", value: "PENDING" },
-                      ...(isUserAdmin ? [{ label: "AUTHORIZE EVENT Node", value: "APPROVED" }, { label: "INVALIDATE EVENT Node", value: "REJECTED" }] : [])
-                    ]}
-                  />
-               </FormField>
-
-               <FormField label="Detailed Resource Briefing" full><FormTextArea className="min-h-[220px] rounded-3xl" placeholder="Full operational context node..." value={item.description} onChange={e => setItem({...item, description: e.target.value})} /></FormField>
-            </div>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField label="Title" full>
+              <FormInput placeholder="Event title..." value={item.title ?? ""} onChange={e => setItem({...item, title: e.target.value})} />
+            </FormField>
+            <FormField label="Venue / Premises">
+              <FormInput placeholder="Location or platform..." value={item.premises ?? ""} onChange={e => setItem({...item, premises: e.target.value})} />
+            </FormField>
+            <FormField label="Host">
+              <FormInput placeholder="Organiser name..." value={item.host ?? ""} onChange={e => setItem({...item, host: e.target.value})} />
+            </FormField>
+            <FormField label="Date">
+              <FormInput type="date" value={item.event_date ?? ""} onChange={e => setItem({...item, event_date: e.target.value})} />
+            </FormField>
+            <FormField label="Time">
+              <FormInput type="time" value={item.event_time ?? ""} onChange={e => setItem({...item, event_time: e.target.value})} />
+            </FormField>
+            <FormField label="Status" full={isUserAdmin}>
+              <FormSelect
+                value={item.approval_status || "PENDING"}
+                onChange={e => setItem({ ...item, approval_status: e.target.value as ApprovalStatus })}
+                options={[
+                  { label: "Pending", value: "PENDING" },
+                  ...(isUserAdmin ? [{ label: "Approved", value: "APPROVED" }, { label: "Rejected", value: "REJECTED" }] : [])
+                ]}
+              />
+            </FormField>
+            <FormField label="Description" full>
+              <FormTextArea className="min-h-[180px]" placeholder="Event description..." value={item.description ?? ""} onChange={e => setItem({...item, description: e.target.value})} />
+            </FormField>
+          </div>
         </div>
       )}
     />

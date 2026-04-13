@@ -156,11 +156,19 @@ meRouter.post('/change-password', async (req, res) => {
 
   const { new_password } = parsed.data;
 
-  // Use admin auth API as we are in backend with service role
-  const { error } = await supabase.auth.admin.updateUserById(req.user.sub, {
-    password: new_password
+  // req.user.sub is member.id (integer) — look up the Supabase auth UUID
+  const { data: member, error: memberError } = await supabase
+    .from('member')
+    .select('auth_user_id')
+    .eq('id', req.user.sub)
+    .single();
+
+  if (memberError || !member) return res.status(404).json({ error: 'Member not found' });
+
+  const { error } = await supabase.auth.admin.updateUserById(member.auth_user_id, {
+    password: new_password,
   });
 
   if (error) return res.status(500).json({ error: error.message });
-  res.json({ message: 'Security node synchronized: Password updated' });
+  res.json({ message: 'Password updated successfully' });
 });
