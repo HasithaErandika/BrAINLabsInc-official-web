@@ -9,7 +9,9 @@ publicationsRouter.use(requireAuth);
 // ─── Zod Schemas ──────────────────────────────────────────────────────────────
 
 const PublicationSchema = z.object({
-  title: z.string().min(1).max(255),
+  title:            z.string().min(1).max(255),
+  authors:          z.string().max(500).optional().nullable(),
+  publication_year: z.number().int().min(1900).max(2100).optional().nullable(),
 });
 
 const ConferencePaperSchema = z.object({
@@ -92,9 +94,9 @@ publicationsRouter.post('/', async (req, res) => {
   const { data, error } = await supabase
     .from('publication')
     .insert({
-      title: parsed.data.title,
+      ...parsed.data,
       created_by_member_id: req.user.sub,
-      approval_status: 'PENDING',
+      approval_status: 'DRAFT',
     })
     .select()
     .single();
@@ -136,7 +138,7 @@ publicationsRouter.put('/:id', async (req, res) => {
 
   const { data, error } = await supabase
     .from('publication')
-    .update({ title: parsed.data.title, approval_status: 'PENDING' })
+    .update({ ...parsed.data, approval_status: 'DRAFT' })
     .eq('id', req.params.id)
     .select()
     .single();
@@ -175,14 +177,17 @@ publicationsRouter.post('/:id/:subtype', async (req, res) => {
   const parsed = subtypeConfig.schema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
+  // Upsert to handle re-linking after edit
   const { data, error } = await supabase
     .from(subtypeConfig.table)
-    .insert({ publication_id: Number(req.params.id), ...parsed.data })
+    .upsert(
+      { publication_id: Number(req.params.id), ...parsed.data },
+      { onConflict: 'publication_id' }
+    )
     .select()
     .single();
 
   if (error) {
-    // Unique constraint violation (e.g., duplicate ISBN)
     if (error.code === '23505') {
       return res.status(409).json({ error: 'Unique identifier already exists (duplicate ISBN/ISSN/DOI/paper_id)' });
     }

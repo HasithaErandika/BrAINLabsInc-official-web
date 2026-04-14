@@ -5,7 +5,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { requireRole } from '../middleware/requireRole.js';
 
 export const grantsRouter = Router();
-// Grants are researcher-only (admin can also manage)
+// Grants are researcher-only (admin can also view/manage)
 grantsRouter.use(requireAuth, requireRole('researcher', 'admin'));
 
 // ─── Zod Schemas ──────────────────────────────────────────────────────────────
@@ -13,9 +13,13 @@ grantsRouter.use(requireAuth, requireRole('researcher', 'admin'));
 const GrantSchema = z.object({
   title:       z.string().min(1).max(255),
   description: z.string().optional().nullable(),
-  legal_docs:  z.string().max(255).optional().nullable(),
   passed_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   expire_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+});
+
+const DocumentSchema = z.object({
+  doc_url:   z.string().url().max(255),
+  doc_label: z.string().max(150).optional().nullable(),
 });
 
 // ─── Helper: own-or-admin check ───────────────────────────────────────────────
@@ -38,7 +42,7 @@ async function ownOrFail(grantId, memberId, role, res) {
 grantsRouter.get('/', async (req, res) => {
   let query = supabase
     .from('grant_info')
-    .select('*')
+    .select('*, grant_document(id, doc_url, doc_label)')
     .order('created_at', { ascending: false });
 
   if (req.user.role !== 'admin') {
@@ -65,7 +69,7 @@ grantsRouter.post('/', async (req, res) => {
     .insert({
       ...parsed.data,
       created_by_researcher: req.user.sub,
-      approval_status: 'PENDING',
+      approval_status: 'DRAFT',
     })
     .select()
     .single();
@@ -79,7 +83,7 @@ grantsRouter.post('/', async (req, res) => {
 grantsRouter.get('/:id', async (req, res) => {
   const { data, error } = await supabase
     .from('grant_info')
-    .select('*')
+    .select('*, grant_document(id, doc_url, doc_label)')
     .eq('id', req.params.id)
     .single();
 
@@ -101,7 +105,7 @@ grantsRouter.put('/:id', async (req, res) => {
 
   const { data, error } = await supabase
     .from('grant_info')
-    .update({ ...parsed.data, approval_status: 'PENDING' })
+    .update({ ...parsed.data, approval_status: 'DRAFT' })
     .eq('id', req.params.id)
     .select()
     .single();
@@ -119,4 +123,39 @@ grantsRouter.delete('/:id', async (req, res) => {
   const { error } = await supabase.from('grant_info').delete().eq('id', req.params.id);
   if (error) return res.status(500).json({ error: error.message });
   res.json({ message: 'Grant deleted' });
+});
+
+// ─── POST /grants/:id/documents ───────────────────────────────────────────────
+
+grantsRouter.post('/:id/documents', async (req, res) => {
+  const grant = await ownOrFail(req.params.id, req.user.sub, req.user.role, res);
+  if (!grant) return;
+
+  const parsed = DocumentSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+  const { data, error } = await supabase
+    .from('grant_document')
+    .insert({ grant_id: Number(req.params.id), ...parsed.data })
+    .select()
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
+});
+
+// ─── DELETE /grants/:id/documents/:docId ─────────────────────────────────────
+
+grantsRouter.delete('/:id/documents/:docId', async (req, res) => {
+  const grant = await ownOrFail(req.params.id, req.user.sub, req.user.role, res);
+  if (!grant) return;
+
+  const { error } = await supabase
+    .from('grant_document')
+    .delete()
+    .eq('id', req.params.docId)
+    .eq('grant_id', req.params.id);
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ message: 'Document removed' });
 });

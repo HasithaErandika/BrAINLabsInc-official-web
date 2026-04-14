@@ -104,7 +104,7 @@ export async function getAllPendingContent() {
       const { data } = await supabase
         .from(table)
         .select('*')
-        .eq('approval_status', 'PENDING')
+        .eq('approval_status', 'PENDING_ADMIN')
         .order('created_at', { ascending: false });
       results[table] = data ?? [];
     })

@@ -15,6 +15,7 @@ import { projectsRouter } from './routes/projects.js';
 import { eventsRouter } from './routes/events.js';
 import { grantsRouter } from './routes/grants.js';
 import { publicationsRouter } from './routes/publications.js';
+import { contentRouter } from './routes/content.js';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -54,6 +55,7 @@ app.use('/projects', projectsRouter);
 app.use('/events', eventsRouter);
 app.use('/grants', grantsRouter);
 app.use('/publications', publicationsRouter);
+app.use('/content', contentRouter);
 
 // ── 404 ────────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {

@@ -9,6 +9,7 @@ tutorialsRouter.use(requireAuth);
 // ─── Zod Schemas ──────────────────────────────────────────────────────────────
 
 const TutorialSchema = z.object({
+  title:       z.string().min(1).max(255),
   content:     z.string().min(1),
   description: z.string().optional().nullable(),
 });
@@ -35,7 +36,7 @@ async function ownOrFail(tutId, memberId, role, res) {
 tutorialsRouter.get('/', async (req, res) => {
   let query = supabase
     .from('tutorial')
-    .select('*, tutorial_image(image_url)')
+    .select('*, tutorial_image(id, image_url)')
     .order('created_at', { ascending: false });
 
   if (req.user.role !== 'admin') {
@@ -58,7 +59,7 @@ tutorialsRouter.post('/', async (req, res) => {
     .insert({
       ...parsed.data,
       created_by_member_id: req.user.sub,
-      approval_status: 'PENDING',
+      approval_status: 'DRAFT',
     })
     .select()
     .single();
@@ -94,7 +95,7 @@ tutorialsRouter.put('/:id', async (req, res) => {
 
   const { data, error } = await supabase
     .from('tutorial')
-    .update({ ...parsed.data, approval_status: 'PENDING' })
+    .update({ ...parsed.data, approval_status: 'DRAFT' })
     .eq('id', req.params.id)
     .select()
     .single();

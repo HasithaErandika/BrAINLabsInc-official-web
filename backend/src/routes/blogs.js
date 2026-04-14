@@ -65,7 +65,7 @@ blogsRouter.post('/', async (req, res) => {
       content,
       description,
       created_by_member_id: req.user.sub,
-      approval_status: 'PENDING',
+      approval_status: 'DRAFT',
     })
     .select()
     .single();
@@ -101,7 +101,7 @@ blogsRouter.put('/:id', async (req, res) => {
 
   const { data, error } = await supabase
     .from('blog')
-    .update({ ...parsed.data, approval_status: 'PENDING' }) // reset to pending on edit
+    .update({ ...parsed.data, approval_status: 'DRAFT' }) // reset to draft on edit
     .eq('id', req.params.id)
     .select()
     .single();

@@ -5,18 +5,18 @@ import { requireAuth } from '../middleware/auth.js';
 import { requireRole } from '../middleware/requireRole.js';
 
 export const eventsRouter = Router();
-// Events are researcher-only (admin can also manage)
+// Events are researcher-only (admin can also view/manage)
 eventsRouter.use(requireAuth, requireRole('researcher', 'admin'));
 
 // ─── Zod Schemas ──────────────────────────────────────────────────────────────
 
 const EventSchema = z.object({
-  title:       z.string().min(1).max(255),
-  description: z.string().optional().nullable(),
-  event_date:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
-  event_time:  z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Must be HH:MM or HH:MM:SS'),
-  premises:    z.string().min(1).max(255),
-  host:        z.string().min(1).max(150),
+  title:          z.string().min(1).max(255),
+  description:    z.string().optional().nullable(),
+  event_datetime: z.string().min(1, 'Event date/time is required'),
+  event_type:     z.string().max(100).optional().nullable(),
+  premises:       z.string().min(1).max(255),
+  host:           z.string().min(1).max(150),
 });
 
 const ImageSchema = z.object({ image_url: z.string().url().max(255) });
@@ -41,8 +41,8 @@ async function ownOrFail(eventId, memberId, role, res) {
 eventsRouter.get('/', async (req, res) => {
   let query = supabase
     .from('event')
-    .select('*, event_image(image_url)')
-    .order('event_date', { ascending: true });
+    .select('*, event_image(id, image_url)')
+    .order('event_datetime', { ascending: true });
 
   if (req.user.role !== 'admin') {
     query = query.eq('created_by_researcher', req.user.sub);
@@ -56,7 +56,7 @@ eventsRouter.get('/', async (req, res) => {
 // ─── POST /events ─────────────────────────────────────────────────────────────
 
 eventsRouter.post('/', async (req, res) => {
-  // Admin cannot create events (no researcher row) — only researchers can
+  // Only researchers can create events (they have a researcher row with member_id)
   if (req.user.role === 'admin') {
     return res.status(403).json({ error: 'Only researchers can create events' });
   }
@@ -69,7 +69,7 @@ eventsRouter.post('/', async (req, res) => {
     .insert({
       ...parsed.data,
       created_by_researcher: req.user.sub,
-      approval_status: 'PENDING',
+      approval_status: 'DRAFT',
     })
     .select()
     .single();
@@ -105,7 +105,7 @@ eventsRouter.put('/:id', async (req, res) => {
 
   const { data, error } = await supabase
     .from('event')
-    .update({ ...parsed.data, approval_status: 'PENDING' })
+    .update({ ...parsed.data, approval_status: 'DRAFT' })
     .eq('id', req.params.id)
     .select()
     .single();
