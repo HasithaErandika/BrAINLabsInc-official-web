@@ -23,27 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
-
-# --- BrAINLabs Specifics ---
-# Secrets & Configs
-.env
-.env.local
-.env.*
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
 !.env.example
-# Ignore the specific config file if it contains secrets
-api/Config.toml
-
-# Python / Data Science (For your ResNet/ML work)
-__pycache__/
-*.py[cod]
-*$py.class
-.venv/
-venv/
-env/
-
-# Large Model Weights & Data
-*.pth
-*.h5
-*.onnx
-*.weights
-data/
