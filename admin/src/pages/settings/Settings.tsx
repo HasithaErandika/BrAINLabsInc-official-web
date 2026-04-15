@@ -54,13 +54,19 @@ export default function Settings() {
 
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-900">Settings</h1>
-        <p className="text-zinc-500 text-sm mt-1">Manage your account security and preferences.</p>
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <ShieldCheck size={14} className="text-zinc-400" />
+            <span className="text-xs font-medium text-zinc-400 uppercase tracking-widest">Preferences</span>
+          </div>
+          <h1 className="text-2xl font-bold text-zinc-900">Settings</h1>
+          <p className="text-sm text-zinc-500 mt-0.5">Manage your account security and preferences.</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
         <div className="md:col-span-1">
           <h2 className="text-sm font-bold text-zinc-900 uppercase tracking-wider mb-4">Account Security</h2>
           <p className="text-xs text-zinc-500 leading-relaxed">

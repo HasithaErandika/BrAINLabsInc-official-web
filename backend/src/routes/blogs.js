@@ -37,7 +37,7 @@ async function ownOrFail(blogId, memberId, role, res) {
 blogsRouter.get('/', async (req, res) => {
   let query = supabase
     .from('blog')
-    .select('*, blog_keyword(keyword), blog_image(image_url)')
+    .select('*, blog_keyword(id, keyword), blog_image(id, image_url)')
     .order('created_at', { ascending: false });
 
   // Admin sees all; others see only their own

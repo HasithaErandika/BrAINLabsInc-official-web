@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CalendarDays, MapPin, Clock, Users, Info, ArrowRight } from "lucide-react";
+import { CalendarDays, MapPin, Clock, Users, ArrowRight } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { api } from "../../api";
 import type { Event, ApprovalStatus } from "../../types";
@@ -29,8 +29,8 @@ export default function EventsPage() {
     title: "",
     description: "",
     event_datetime: new Date().toISOString(),
-    premises: "BrAIN LABS HQ",
-    host: "LAB ADMINISTRATION",
+    premises: "",
+    host: "",
     approval_status: "DRAFT" as ApprovalStatus,
   };
 
@@ -73,43 +73,44 @@ export default function EventsPage() {
       onToggleStatus={isAdmin() ? handleToggleStatus : undefined}
       searchFields={(item) => [item.title, item.description || "", item.premises]}
       filterOptions={[
-        { label: "ALL", value: "ALL" },
-        { label: "PUBLISHED", value: "APPROVED" },
-        { label: "PENDING", value: "PENDING_ADMIN" },
-        { label: "DRAFT", value: "DRAFT" },
+        { label: "All", value: "ALL" },
+        { label: "Published", value: "APPROVED" },
+        { label: "Pending", value: "PENDING_ADMIN" },
+        { label: "Draft", value: "DRAFT" },
       ]}
       renderListItem={(item, onClick) => {
         const date = new Date(item.event_datetime);
         return (
-          <div 
-            key={item.id} 
-            onClick={onClick} 
-            className="group bg-white border border-zinc-200 hover:border-zinc-400 hover:shadow-sm rounded-xl p-5 cursor-pointer flex flex-col gap-4 transition-all"
+          <div
+            key={item.id}
+            onClick={onClick}
+            className="group bg-white border border-zinc-200 hover:border-zinc-300 hover:shadow-lg hover:shadow-zinc-100 rounded-2xl p-5 cursor-pointer flex flex-col gap-3 transition-all duration-200"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-black text-white">
-                  <CalendarDays size={14} />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center shrink-0">
+                  <CalendarDays size={14} className="text-zinc-600" />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                <span className="text-xs font-medium text-zinc-400">
                   {date.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}
                 </span>
               </div>
               <Badge status={item.approval_status} />
             </div>
-            
-            <div className="space-y-2">
-              <h3 className="text-lg font-black text-black uppercase tracking-tight leading-tight line-clamp-2">{item.title}</h3>
-              <p className="text-[10px] text-zinc-400 font-bold flex items-center gap-2 uppercase tracking-wide">
-                <MapPin size={12} /> {item.premises}
+
+            <div className="space-y-1.5">
+              <h3 className="text-sm font-semibold text-zinc-900 leading-snug line-clamp-2">{item.title}</h3>
+              <p className="text-xs text-zinc-500 flex items-center gap-1.5">
+                <MapPin size={10} className="text-zinc-500 shrink-0" /> {item.premises}
               </p>
             </div>
-            
-            <div className="pt-4 border-t border-zinc-100 flex items-center justify-between">
-              <span className="text-[10px] font-black text-black uppercase tracking-[0.2em] flex items-center gap-2">
-                <Clock size={12} /> {date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+
+            <div className="pt-3 border-t border-zinc-100 flex items-center justify-between">
+              <span className="text-xs text-zinc-400 flex items-center gap-1">
+                <Clock size={11} />
+                {date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
               </span>
-              <ArrowRight size={14} className="text-zinc-300 group-hover:text-black group-hover:translate-x-1 transition-all" />
+              <ArrowRight size={13} className="text-zinc-300 group-hover:text-zinc-600 group-hover:translate-x-0.5 transition-all" />
             </div>
           </div>
         );
@@ -117,85 +118,80 @@ export default function EventsPage() {
       renderDetail={(item) => {
         const date = new Date(item.event_datetime);
         return (
-          <div className="space-y-12 animate-enter">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-8 border border-zinc-200 bg-white space-y-4">
-                <div className="flex items-center gap-2 text-zinc-400">
-                  <MapPin size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Location</span>
+          <div className="space-y-8 pb-20 animate-enter">
+            {/* Stats grid */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="p-4 bg-zinc-50 border border-zinc-100 rounded-2xl">
+                <div className="flex items-center gap-1.5 text-zinc-600 mb-1.5">
+                  <MapPin size={12} />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider">Location</span>
                 </div>
-                <p className="text-lg font-black text-black uppercase tracking-tight">{item.premises}</p>
+                <p className="text-sm font-semibold text-zinc-900">{item.premises}</p>
               </div>
-              <div className="p-8 border border-zinc-200 bg-white space-y-4">
-                <div className="flex items-center gap-2 text-zinc-400">
-                  <Clock size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Time</span>
+              <div className="p-4 bg-zinc-50 border border-zinc-100 rounded-2xl">
+                <div className="flex items-center gap-1.5 text-zinc-400 mb-1.5">
+                  <Clock size={12} />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider">Time</span>
                 </div>
-                <p className="text-lg font-black text-black uppercase tracking-tight">
+                <p className="text-sm font-semibold text-zinc-900">
                   {date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
-              <div className="p-8 border border-zinc-200 bg-white space-y-4">
-                <div className="flex items-center gap-2 text-zinc-400">
-                  <Users size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Host</span>
+              <div className="p-4 bg-zinc-50 border border-zinc-100 rounded-2xl">
+                <div className="flex items-center gap-1.5 text-zinc-400 mb-1.5">
+                  <Users size={12} />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider">Host</span>
                 </div>
-                <p className="text-lg font-black text-black uppercase tracking-tight">{item.host}</p>
+                <p className="text-sm font-semibold text-zinc-900">{item.host}</p>
               </div>
             </div>
 
             {item.description && (
-              <div className="space-y-6">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 flex items-center gap-2">
-                  <Info size={14} /> Description
-                </h4>
-                <p className="text-sm text-black font-bold uppercase tracking-tight leading-loose">
-                  {item.description}
-                </p>
+              <div className="p-5 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm text-zinc-900 italic font-medium leading-relaxed">
+                "{item.description}"
               </div>
             )}
           </div>
         );
       }}
       renderEdit={(item, setItem) => (
-        <div className="space-y-10">
+        <div className="space-y-6">
           <Input
             label="Event Title"
             placeholder="Enter event title..."
-            value={item.title ?? ""} 
-            onChange={e => setItem({...item, title: e.target.value})} 
+            value={item.title ?? ""}
+            onChange={e => setItem({ ...item, title: e.target.value })}
           />
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Input
-              label="Location"
+              label="Location / Venue"
               placeholder="Campus / Platform / Online..."
-              value={item.premises ?? ""} 
-              onChange={e => setItem({...item, premises: e.target.value})} 
+              value={item.premises ?? ""}
+              onChange={e => setItem({ ...item, premises: e.target.value })}
             />
             <Input
               label="Host / Organiser"
               placeholder="Organiser name..."
-              value={item.host ?? ""} 
-              onChange={e => setItem({...item, host: e.target.value})} 
-            />
-            <Input 
-              label="Scheduled Date & Time" 
-              type="datetime-local" 
-              value={item.event_datetime ? new Date(item.event_datetime).toISOString().slice(0, 16) : ""} 
-              onChange={e => setItem({...item, event_datetime: e.target.value})} 
+              value={item.host ?? ""}
+              onChange={e => setItem({ ...item, host: e.target.value })}
             />
           </div>
 
+          <Input
+            label="Scheduled Date & Time"
+            type="datetime-local"
+            value={item.event_datetime ? new Date(item.event_datetime).toISOString().slice(0, 16) : ""}
+            onChange={e => setItem({ ...item, event_datetime: e.target.value })}
+          />
+
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-tight text-zinc-600">
-              Engagement Description
-            </label>
-            <textarea 
-              className="input-monochrome min-h-[160px] py-4" 
-              placeholder="Describe the event..."
-              value={item.description ?? ""} 
-              onChange={e => setItem({...item, description: e.target.value})} 
+            <label className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Description</label>
+            <textarea
+              className="input-monochrome min-h-[120px] py-3"
+              placeholder="Describe the event goals, agenda, or notes..."
+              value={item.description ?? ""}
+              onChange={e => setItem({ ...item, description: e.target.value })}
             />
           </div>
         </div>

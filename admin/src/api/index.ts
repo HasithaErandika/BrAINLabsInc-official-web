@@ -78,6 +78,13 @@ export const api = {
     addOngoingResearch: (title: string) => apiClient.post<OngoingResearch>('/me/ongoing-research', { title }).then(data),
     removeOngoingResearch: (id: number) => apiClient.delete(`/me/ongoing-research/${id}`).then(data),
     changePassword: (payload: any) => apiClient.post('/me/change-password', payload).then(data),
+    updateSupervisor: (assigned_by_researcher_id: number) =>
+      apiClient.patch('/me/supervisor', { assigned_by_researcher_id }).then(data),
+    mySupervisor: () => apiClient.get('/me/my-supervisor').then(data),
+    myAssistants: () => apiClient.get<any[]>('/me/my-assistants').then(data),
+    removeAssistant: (raId: number) => apiClient.delete(`/me/my-assistants/${raId}`).then(data),
+    availableAssistants: (q?: string) => apiClient.get<any[]>(`/me/available-assistants${q ? `?q=${encodeURIComponent(q)}` : ''}`).then(data),
+    assignAssistant: (ra_member_id: number) => apiClient.post('/me/my-assistants', { ra_member_id }).then(data),
   },
   admin: {
     getMembers: () => apiClient.get<BaseMember[]>('/admin/members').then(data),
@@ -90,7 +97,8 @@ export const api = {
   },
   content: {
     submit: (table: string, id: number) => apiClient.patch(`/content/${table}/${id}/submit`).then(data),
-    review: (table: string, id: number, status: 'PENDING_ADMIN' | 'REJECTED') => apiClient.patch(`/content/${table}/${id}/review`, { status }).then(data),
+    review: (table: string, id: number, status: 'PENDING_ADMIN' | 'REJECTED') =>
+      apiClient.patch(`/content/${table}/${id}/review`, { status }).then(data),
     getResearcherReviews: () => apiClient.get<Record<string, any[]>>('/content/researcher/reviews').then(data),
   },
   blogs: {
@@ -99,6 +107,14 @@ export const api = {
     create: (payload: Partial<Blog>) => apiClient.post<Blog>('/blogs', payload).then(data),
     update: (id: number, payload: Partial<Blog>) => apiClient.put<Blog>(`/blogs/${id}`, payload).then(data),
     delete: (id: number) => apiClient.delete(`/blogs/${id}`).then(data),
+    addKeyword: (id: number, keyword: string) =>
+      apiClient.post(`/blogs/${id}/keywords`, { keyword }).then(data),
+    removeKeyword: (id: number, kwId: number) =>
+      apiClient.delete(`/blogs/${id}/keywords/${kwId}`).then(data),
+    addImage: (id: number, image_url: string) =>
+      apiClient.post(`/blogs/${id}/images`, { image_url }).then(data),
+    removeImage: (id: number, imgId: number) =>
+      apiClient.delete(`/blogs/${id}/images/${imgId}`).then(data),
   },
   events: {
     list: () => apiClient.get<Event[]>('/events').then(data),
@@ -113,7 +129,10 @@ export const api = {
     create: (payload: Partial<Grant>) => apiClient.post<Grant>('/grants', payload).then(data),
     update: (id: number, payload: Partial<Grant>) => apiClient.put<Grant>(`/grants/${id}`, payload).then(data),
     delete: (id: number) => apiClient.delete(`/grants/${id}`).then(data),
-    addDocument: (grantId: number, doc: { doc_url: string; doc_label?: string }) => apiClient.post(`/grants/${grantId}/documents`, doc).then(data),
+    addDocument: (grantId: number, doc: { doc_url: string; doc_label?: string }) =>
+      apiClient.post(`/grants/${grantId}/documents`, doc).then(data),
+    removeDocument: (grantId: number, docId: number) =>
+      apiClient.delete(`/grants/${grantId}/documents/${docId}`).then(data),
   },
   projects: {
     list: () => apiClient.get<Project[]>('/projects').then(data),
@@ -121,6 +140,10 @@ export const api = {
     create: (payload: Partial<Project>) => apiClient.post<Project>('/projects', payload).then(data),
     update: (id: number, payload: Partial<Project>) => apiClient.put<Project>(`/projects/${id}`, payload).then(data),
     delete: (id: number) => apiClient.delete(`/projects/${id}`).then(data),
+    addDiagram: (id: number, diagram_url: string) =>
+      apiClient.post(`/projects/${id}/diagrams`, { diagram_url }).then(data),
+    removeDiagram: (id: number, diagId: number) =>
+      apiClient.delete(`/projects/${id}/diagrams/${diagId}`).then(data),
   },
   tutorials: {
     list: () => apiClient.get<Tutorial[]>('/tutorials').then(data),
@@ -128,6 +151,10 @@ export const api = {
     create: (payload: Partial<Tutorial>) => apiClient.post<Tutorial>('/tutorials', payload).then(data),
     update: (id: number, payload: Partial<Tutorial>) => apiClient.put<Tutorial>(`/tutorials/${id}`, payload).then(data),
     delete: (id: number) => apiClient.delete(`/tutorials/${id}`).then(data),
+    addImage: (id: number, image_url: string) =>
+      apiClient.post(`/tutorials/${id}/images`, { image_url }).then(data),
+    removeImage: (id: number, imgId: number) =>
+      apiClient.delete(`/tutorials/${id}/images/${imgId}`).then(data),
   },
   publications: {
     list: () => apiClient.get<Publication[]>('/publications').then(data),
@@ -135,5 +162,7 @@ export const api = {
     create: (payload: Partial<Publication>) => apiClient.post<Publication>('/publications', payload).then(data),
     update: (id: number, payload: Partial<Publication>) => apiClient.put<Publication>(`/publications/${id}`, payload).then(data),
     delete: (id: number) => apiClient.delete(`/publications/${id}`).then(data),
+    linkSubtype: (id: number, subtype: 'conference-paper' | 'book' | 'journal' | 'article', subtypeData: any) =>
+      apiClient.post(`/publications/${id}/${subtype}`, subtypeData).then(data),
   },
 };

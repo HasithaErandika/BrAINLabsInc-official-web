@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, ArrowRight, Zap } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Sparkles, BookOpen, FlaskConical, GraduationCap } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
 export default function Login() {
@@ -37,104 +37,110 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex font-['Inter']">
-      {/* ── Left panel ─────────────────────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-[52%] bg-black flex-col justify-between p-14 relative overflow-hidden">
-        {/* Abstract neural-grid */}
-        <svg
-          className="absolute inset-0 w-full h-full opacity-[0.06]"
-          viewBox="0 0 800 800"
-          preserveAspectRatio="xMidYMid slice"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          {Array.from({ length: 12 }).map((_, r) =>
-            Array.from({ length: 12 }).map((_, c) => (
-              <circle key={`${r}-${c}`} cx={c * 72 + 4} cy={r * 72 + 4} r="2" fill="white" />
+      {/* ── Left panel ──────────────────────────────────────────────── */}
+      <div className="hidden lg:flex lg:w-[52%] bg-[#0f0f1a] flex-col justify-between p-14 relative overflow-hidden">
+        {/* Gradient orbs */}
+        <div className="absolute top-1/4 -left-20 w-80 h-80 rounded-full bg-white opacity-5 blur-[80px]" />
+        <div className="absolute bottom-1/3 right-0 w-64 h-64 rounded-full bg-zinc-500 opacity-10 blur-[80px]" />
+        <div className="absolute top-2/3 left-1/3 w-48 h-48 rounded-full bg-white opacity-5 blur-[60px]" />
+
+        {/* Dot grid */}
+        <svg className="absolute inset-0 w-full h-full opacity-[0.04]" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice">
+          {Array.from({ length: 14 }).map((_, r) =>
+            Array.from({ length: 14 }).map((_, c) => (
+              <circle key={`${r}-${c}`} cx={c * 60 + 10} cy={r * 60 + 10} r="1.5" fill="white" />
             ))
           )}
-          {[
-            "M4,4 L364,220", "M148,76 L508,292", "M220,4 L508,148",
-            "M4,4 L148,220", "M364,4 L508,220", "M76,148 L364,364",
-            "M4,220 L220,364", "M220,148 L508,364", "M148,4 L292,220",
-            "M4,148 L292,364", "M292,4 L436,220", "M436,76 L580,292",
-          ].map((d, i) => (
-            <path key={i} d={d} stroke="white" strokeWidth="1" fill="none" />
-          ))}
         </svg>
 
-        {/* Gradient blobs */}
-        <div className="absolute top-1/4 -left-20 w-72 h-72 rounded-full bg-violet-600 opacity-20 blur-3xl" />
-        <div className="absolute bottom-1/4 right-0 w-56 h-56 rounded-full bg-blue-500 opacity-15 blur-3xl" />
-
-        {/* Top */}
+        {/* Top logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="w-9 h-9 bg-white flex items-center justify-center">
-            <img src="/logo.png" alt="BrAIN Labs" className="w-7 h-7 object-contain" />
+          <div className="w-9 h-9 rounded-xl bg-zinc-900">
+            <img src="/logo.png" alt="BrAIN Labs" className="w-5 h-5 object-contain invert" />
           </div>
           <div>
-            <p className="text-white text-[11px] font-black uppercase tracking-[0.3em] leading-none">BrAIN Labs</p>
-            <p className="text-zinc-500 text-[9px] uppercase tracking-[0.2em]">Admin Dashboard</p>
+            <p className="text-white text-xs font-bold tracking-wide leading-none">BrAIN Labs</p>
+            <p className="text-zinc-500 text-[10px] tracking-widest uppercase mt-0.5">Research Portal</p>
           </div>
         </div>
 
-        {/* Middle */}
-        <div className="relative z-10 space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-zinc-700 rounded-full">
-            <Zap size={10} className="text-violet-400" />
-            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Brain-Inspired AI Research</span>
+        {/* Middle hero */}
+        <div className="relative z-10 space-y-7">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full">
+            <Sparkles size={10} className="text-zinc-400" />
+            <span className="text-[9px] font-semibold text-zinc-400 uppercase tracking-widest">Brain-Inspired AI Research</span>
           </div>
-          <h2 className="text-5xl font-black text-white tracking-tighter leading-none">
+
+          <h2 className="text-5xl font-black text-white tracking-tighter leading-[1.05]">
             The Lab's<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-200 via-white to-zinc-300">
               Command Centre
             </span>
           </h2>
-          <p className="text-zinc-400 text-sm leading-relaxed max-w-xs font-medium">
-            Manage publications, members, events and research content for BrAIN Labs Inc. at SLIIT.
+
+          <p className="text-zinc-400 text-sm leading-relaxed max-w-xs">
+            Manage publications, members, events and research content for BrAIN Labs at SLIIT.
           </p>
+
+          {/* Feature pills */}
+          <div className="flex flex-col gap-2.5 pt-2">
+            {[
+              { icon: BookOpen, label: "Publications & Research Blogs" },
+              { icon: FlaskConical, label: "Projects & Grant Management" },
+              { icon: GraduationCap, label: "Tutorials & Member Directory" },
+            ].map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-center gap-3 text-sm text-zinc-400">
+                <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                  <Icon size={13} className="text-zinc-300" />
+                </div>
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Bottom */}
         <div className="relative z-10">
-          <p className="text-zinc-600 text-[9px] font-bold uppercase tracking-[0.3em]">
+          <p className="text-zinc-600 text-[10px] font-medium uppercase tracking-widest">
             © {new Date().getFullYear()} BrAIN Labs Inc. — SLIIT
           </p>
         </div>
       </div>
 
       {/* ── Right panel (form) ─────────────────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-zinc-50">
-        <div className="w-full max-w-[400px] space-y-10">
+      <div className="flex-1 flex items-center justify-center p-8 bg-[#f8f8fb]">
+        <div className="w-full max-w-[400px] space-y-8">
 
           {/* Mobile brand */}
-          <div className="lg:hidden text-center space-y-4">
-            <div className="w-14 h-14 bg-black flex items-center justify-center mx-auto">
-              <img src="/logo.png" alt="BrAIN Labs" className="w-10 h-10 object-contain" />
+          <div className="lg:hidden text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-zinc-900 flex items-center justify-center mx-auto">
+              <img src="/logo.png" alt="BrAIN Labs" className="w-6 h-6 object-contain invert" />
             </div>
-            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">Admin Dashboard</p>
+            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">BrAIN Labs Portal</p>
           </div>
 
-          <div className="space-y-2">
-            <h1 className="text-3xl font-black text-black tracking-tight">Welcome back</h1>
+          <div className="space-y-1.5">
+            <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Welcome back</h1>
             <p className="text-sm text-zinc-500">Sign in to access your lab dashboard.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-zinc-700 uppercase tracking-wide">Email Address</label>
+              <label className="text-xs font-semibold text-zinc-600 uppercase tracking-wide">Email Address</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@sliit.lk"
-                className="w-full h-12 px-4 bg-white border border-zinc-200 rounded-xl text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-zinc-900 transition-all"
+                className="input-monochrome"
               />
             </div>
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-zinc-700 uppercase tracking-wide">Password</label>
+              <label className="text-xs font-semibold text-zinc-600 uppercase tracking-wide">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -142,21 +148,22 @@ export default function Login() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full h-12 px-4 pr-12 bg-white border border-zinc-200 rounded-xl text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-zinc-900 transition-all"
+                  className="input-monochrome pr-12"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(v => !v)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 transition-colors"
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
             </div>
 
             {/* Error */}
             {error && (
-              <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
+              <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
+                <span className="text-red-500 mt-0.5 shrink-0">⚠</span>
                 <p className="text-xs font-semibold text-red-600">{error}</p>
               </div>
             )}
@@ -165,19 +172,19 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 bg-black text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-zinc-800 disabled:opacity-50 transition-all"
+              className="w-full h-11 bg-zinc-900 hover:bg-zinc-700 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
             >
               {loading ? (
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <>Sign In <ArrowRight size={16} /></>
+                <>Sign In <ArrowRight size={15} /></>
               )}
             </button>
 
             {/* Divider */}
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px bg-zinc-200" />
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">or</span>
+              <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">or</span>
               <div className="flex-1 h-px bg-zinc-200" />
             </div>
 
@@ -185,7 +192,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => navigate("/register")}
-              className="w-full h-12 bg-white border border-zinc-200 text-sm font-bold text-zinc-700 rounded-xl hover:border-zinc-900 hover:text-black transition-all"
+              className="w-full h-11 bg-white border border-zinc-200 hover:border-zinc-400 text-sm font-medium text-zinc-700 hover:text-zinc-900 rounded-xl transition-all"
             >
               Request Lab Access
             </button>

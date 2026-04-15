@@ -41,7 +41,7 @@ export async function getMemberWithRoleByAuthId(authUserId) {
 
   if (error || !data) throw httpError(404, 'Member not found');
 
-  let role = 'pending';
+  let role = 'no_role';
   let roleRow = null;
 
   const adminRow = getJoined(data.admin);
@@ -57,10 +57,6 @@ export async function getMemberWithRoleByAuthId(authUserId) {
   } else if (raRow) {
     role = 'research_assistant';
     roleRow = raRow;
-  }
-
-  if (role === 'pending') {
-    throw httpError(403, 'Account not found in system (No assigned role). Contact admin.');
   }
 
   const { admin, researcher, research_assistant, ...member } = data;

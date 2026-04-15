@@ -9,8 +9,8 @@ export default function Dashboard() {
 
   if (!token || !user) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center bg-white">
-        <div className="w-10 h-10 border-4 border-black border-t-transparent animate-spin" />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="w-8 h-8 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin" />
       </div>
     );
   }
@@ -18,34 +18,39 @@ export default function Dashboard() {
   // Handle Pending status for Researchers and Assistants
   if (user.approval_status === 'PENDING_ADMIN' && !isAdmin()) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[80vh] p-10 text-center space-y-12 animate-enter">
-        <div className="w-24 h-24 bg-black flex items-center justify-center border border-black group">
-          <Clock className="w-12 h-12 text-white group-hover:rotate-12 transition-transform" />
+      <div className="flex flex-col items-center justify-center min-h-[80vh] p-10 text-center space-y-8 animate-enter">
+        <div className="w-20 h-20 rounded-3xl bg-zinc-100 border border-zinc-200 flex items-center justify-center ">
+          <Clock className="w-10 h-10 text-zinc-600" />
         </div>
-        
-        <div className="space-y-4 max-w-lg">
-          <div className="flex items-center justify-center gap-2 text-zinc-400">
-             <span className="text-[10px] font-black uppercase tracking-[0.4em]">Protocol: Identity Review</span>
-          </div>
-          <h1 className="text-4xl font-black text-black tracking-tighter uppercase leading-none">Security Clearance Required</h1>
-          <p className="text-sm font-bold text-black uppercase leading-loose tracking-tight pt-4">
-            Personnel <span className="underline">{user.first_name} {user.second_name}</span> is currently in the verification queue. 
-            Access to laboratory systems is restricted until authorization is granted.
+
+        <div className="space-y-3 max-w-md">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded-full text-[11px] font-semibold uppercase tracking-widest">
+            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse" />
+            Pending Approval
+          </span>
+          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight mt-3">
+            Account Under Review
+          </h1>
+          <p className="text-sm text-zinc-500 leading-relaxed">
+            Hi <strong className="text-zinc-700">{user.first_name}</strong>, your account is currently in the
+            verification queue. Access to the portal will be granted once an admin reviews your registration.
           </p>
         </div>
 
-        <div className="border border-black px-8 py-3 flex items-center gap-4">
-          <div className="w-2 h-2 bg-black animate-pulse" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black">Awaiting Administrative Sign-off</span>
+        <div className="flex items-center gap-3 px-5 py-3 bg-white border border-zinc-200 rounded-2xl shadow-sm">
+          <div className="w-2 h-2 bg-zinc-400 rounded-full animate-pulse" />
+          <span className="text-xs font-semibold text-zinc-600">Awaiting administrative approval</span>
         </div>
 
-        <p className="text-[10px] text-zinc-300 font-black uppercase tracking-widest pt-8">Reference: BRN-{user.id}-IDENT</p>
+        <p className="text-[10px] text-zinc-300 font-medium tracking-widest uppercase">
+          Ref: BRN-{user.id}-IDENT
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-12 animate-enter">
+    <div className="space-y-8 animate-enter">
       {isAdmin() ? (
         <AdminDashboard />
       ) : isResearcher() ? (
@@ -53,13 +58,13 @@ export default function Dashboard() {
       ) : isAssistant() ? (
         <ResearchAssistantDashboard memberId={user.id} />
       ) : (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8">
-          <div className="w-16 h-16 bg-black flex items-center justify-center text-white">
-            <ShieldAlert size={32} />
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+          <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center">
+            <ShieldAlert size={24} className="text-red-500" />
           </div>
-          <div className="text-center space-y-2">
-            <p className="text-[10px] font-black text-black uppercase tracking-[0.3em]">Critical Exception</p>
-            <p className="text-sm font-bold text-zinc-500 uppercase">Role configuration mismatch. Contact Oversight.</p>
+          <div className="text-center space-y-1.5">
+            <p className="text-sm font-semibold text-zinc-900">Role configuration error</p>
+            <p className="text-xs text-zinc-500">Contact your administrator. (Ref: BRN-{user.id})</p>
           </div>
         </div>
       )}

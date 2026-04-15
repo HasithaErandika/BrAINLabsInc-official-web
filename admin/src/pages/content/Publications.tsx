@@ -56,12 +56,21 @@ export default function PublicationsPage() {
       publicationId = saved.id;
     }
 
+    // Wire subtype data to the ISA sub-table
     if (publicationId && item.type) {
       const key = subtypeKey(item.type);
       const subtypeData = (item as any)[key];
-      if (subtypeData) {
-        // Assume backend endpoint exists for subtypes
-        // await api.publications.linkSubtype(Number(publicationId), subtypeEndpoint(item.type), subtypeData);
+      if (subtypeData && Object.keys(subtypeData).length > 0) {
+        const subtypeEndpoint =
+          item.type === 'CONFERENCE' ? 'conference-paper' :
+          item.type === 'BOOK'       ? 'book' :
+          item.type === 'JOURNAL'    ? 'journal' : 'article';
+        try {
+          await api.publications.linkSubtype(Number(publicationId), subtypeEndpoint, subtypeData);
+        } catch (err: any) {
+          // 409 = duplicate identifier — not a fatal error, data is already there
+          if (err?.response?.status !== 409) throw err;
+        }
       }
     }
 

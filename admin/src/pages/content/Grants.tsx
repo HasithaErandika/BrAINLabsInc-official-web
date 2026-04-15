@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Briefcase, Calendar, ShieldCheck, FileText, ArrowRight, Info } from "lucide-react";
+import { Briefcase, Calendar, FileText, ArrowRight, ExternalLink } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { api } from "../../api";
 import type { Grant, ApprovalStatus } from "../../types";
 import { ContentPageTemplate } from "../../components/shared/ContentPageTemplate";
 import { Input } from "../../components/ui/Input";
 import { Badge } from "../../components/ui/Badge";
+import { AttachmentList } from "../../components/ui/AttachmentList";
 import { Button } from "../../components/ui/Button";
 
 export default function GrantsPage() {
@@ -57,6 +58,9 @@ export default function GrantsPage() {
     await fetchItems();
   };
 
+  const formatDate = (d?: string) =>
+    d ? new Date(d).toLocaleDateString(undefined, { dateStyle: "medium" }) : "—";
+
   return (
     <ContentPageTemplate<Grant>
       title="Grants"
@@ -73,136 +77,142 @@ export default function GrantsPage() {
       onToggleStatus={isAdmin() ? handleToggleStatus : undefined}
       searchFields={(item) => [item.title, item.description || ""]}
       filterOptions={[
-        { label: "ALL", value: "ALL" },
-        { label: "PUBLISHED", value: "APPROVED" },
-        { label: "PENDING", value: "PENDING_ADMIN" },
-        { label: "DRAFT", value: "DRAFT" },
+        { label: "All", value: "ALL" },
+        { label: "Published", value: "APPROVED" },
+        { label: "Pending", value: "PENDING_ADMIN" },
+        { label: "Draft", value: "DRAFT" },
       ]}
       renderListItem={(item, onClick) => (
         <div
           key={item.id}
           onClick={onClick}
-          className="group bg-white border border-zinc-200 hover:border-zinc-400 hover:shadow-sm rounded-xl p-5 cursor-pointer flex flex-col gap-4 transition-all"
+          className="group bg-white border border-zinc-200 hover:border-zinc-300 hover:shadow-lg hover:shadow-zinc-100 rounded-2xl p-5 cursor-pointer flex flex-col gap-3 transition-all duration-200"
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-black text-white shrink-0">
-                <Briefcase size={14} />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center">
+                <Briefcase size={14} className="text-zinc-600" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Grant</span>
+              <span className="text-xs font-medium text-zinc-400">Grant</span>
             </div>
             <Badge status={item.approval_status} />
           </div>
-          
-          <div className="space-y-2">
-            <h3 className="text-lg font-black text-black uppercase tracking-tight leading-tight line-clamp-2">{item.title}</h3>
+
+          <div className="space-y-1.5">
+            <h3 className="text-sm font-semibold text-zinc-900 leading-snug line-clamp-2">{item.title}</h3>
             {item.description && (
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-tight line-clamp-2 italic">
-                {item.description}
-              </p>
+              <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">{item.description}</p>
             )}
           </div>
 
-          <div className="pt-4 border-t border-zinc-100 flex items-center justify-between">
-            <span className="text-[10px] font-black text-black uppercase tracking-[0.2em]">
-              EXP: {item.expire_date}
+          <div className="pt-3 border-t border-zinc-100 flex items-center justify-between">
+            <span className="text-xs text-zinc-400 flex items-center gap-1">
+              <Calendar size={11} /> Expires {formatDate(item.expire_date)}
             </span>
-            <ArrowRight size={14} className="text-zinc-300 group-hover:text-black group-hover:translate-x-1 transition-all" />
+            <ArrowRight size={13} className="text-zinc-300 group-hover:text-zinc-600 group-hover:translate-x-0.5 transition-all" />
           </div>
         </div>
       )}
       renderDetail={(item) => (
-        <div className="space-y-12 pb-20 animate-enter">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-8 border border-zinc-200 bg-white space-y-4">
-              <div className="flex items-center gap-2 text-zinc-400">
-                <ShieldCheck size={16} />
-                <span className="text-[10px] font-black uppercase tracking-widest">Status</span>
-              </div>
-              <Badge status={item.approval_status} />
+        <div className="space-y-8 pb-20 animate-enter">
+          {/* Dates */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
+              <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-1">Awarded</p>
+              <p className="text-sm font-semibold text-zinc-900">{formatDate(item.passed_date)}</p>
             </div>
-            <div className="p-8 border border-zinc-200 bg-white space-y-4">
-              <div className="flex items-center gap-2 text-zinc-400">
-                <Calendar size={16} />
-                <span className="text-[10px] font-black uppercase tracking-widest">Awarded</span>
-              </div>
-              <p className="text-lg font-black text-black uppercase">{item.passed_date}</p>
-            </div>
-            <div className="p-8 border border-zinc-200 bg-white space-y-4">
-              <div className="flex items-center gap-2 text-zinc-400">
-                <Calendar size={16} />
-                <span className="text-[10px] font-black uppercase tracking-widest">Expiration</span>
-              </div>
-              <p className="text-lg font-black text-black uppercase">{item.expire_date}</p>
+            <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
+              <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-1">Expires</p>
+              <p className="text-sm font-semibold text-zinc-900">{formatDate(item.expire_date)}</p>
             </div>
           </div>
 
           {item.description && (
-            <div className="space-y-6">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 flex items-center gap-2">
-                <Info size={14} /> Description
-              </h4>
-              <p className="text-sm font-bold text-black uppercase leading-loose tracking-tight whitespace-pre-wrap italic">
-                {item.description}
-              </p>
+            <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 text-sm text-zinc-900 italic leading-relaxed font-medium">
+              "{item.description}"
             </div>
           )}
 
-          {item.documents && item.documents.length > 0 && (
-            <div className="pt-6 border-t border-zinc-100 flex flex-wrap gap-4">
-              {item.documents.map(doc => (
-                <Button
-                  key={doc.id}
-                  onClick={() => window.open(doc.doc_url, '_blank')}
-                  variant="outline"
-                  className="h-12 px-8 text-[11px] font-black tracking-widest uppercase"
-                >
-                  <FileText size={16} className="mr-2" /> {doc.doc_label || 'View Document'} (PDF)
-                </Button>
-              ))}
+          {/* Documents */}
+          {(item.documents ?? []).length > 0 && (
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Documents</h4>
+              <div className="flex flex-wrap gap-3">
+                {item.documents!.map(doc => (
+                  <Button
+                    key={doc.id}
+                    onClick={() => window.open(doc.doc_url, '_blank')}
+                    variant="outline"
+                    className="h-10 px-4 text-xs font-medium gap-2"
+                  >
+                    <FileText size={13} className="text-zinc-600" />
+                    {doc.doc_label || 'View Document'}
+                    <ExternalLink size={11} className="text-zinc-400" />
+                  </Button>
+                ))}
+              </div>
             </div>
           )}
         </div>
       )}
       renderEdit={(item, setItem) => (
-        <div className="space-y-10">
+        <div className="space-y-8">
           <Input
             label="Grant Title"
             placeholder="Enter grant name..."
-            value={item.title ?? ""} 
-            onChange={e => setItem({ ...item, title: e.target.value })} 
+            value={item.title ?? ""}
+            onChange={e => setItem({ ...item, title: e.target.value })}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Input 
-              label="Award Date" 
-              type="date" 
-              value={item.passed_date ?? ""} 
-              onChange={e => setItem({ ...item, passed_date: e.target.value })} 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Input
+              label="Award Date"
+              type="date"
+              value={item.passed_date ?? ""}
+              onChange={e => setItem({ ...item, passed_date: e.target.value })}
             />
-            <Input 
-              label="Expiry Date" 
-              type="date" 
-              value={item.expire_date ?? ""} 
-              onChange={e => setItem({ ...item, expire_date: e.target.value })} 
+            <Input
+              label="Expiry Date"
+              type="date"
+              value={item.expire_date ?? ""}
+              onChange={e => setItem({ ...item, expire_date: e.target.value })}
             />
           </div>
 
-          <p className="p-8 border border-dashed border-zinc-200 text-center text-[10px] font-medium text-zinc-400 tracking-wide">
-            Documents can be attached after the grant is created.
-          </p>
-
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-tight text-zinc-600">
-              Description
-            </label>
+            <label className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Description</label>
             <textarea
-              className="input-monochrome min-h-[160px] py-4"
-              placeholder="Describe the grant objectives..."
+              className="input-monochrome min-h-[120px] py-3"
+              placeholder="Describe the grant objectives and scope..."
               value={item.description ?? ""}
               onChange={e => setItem({ ...item, description: e.target.value })}
             />
           </div>
+
+          {/* Documents — only after creation */}
+          {item.id ? (
+            <AttachmentList
+              label="Documents"
+              icon="link"
+              items={item.documents ?? []}
+              displayKey="doc_url"
+              secondaryKey="doc_label"
+              inputPlaceholder="https://example.com/grant-doc.pdf"
+              secondaryPlaceholder="Label (e.g. Grant Agreement)"
+              onAdd={async (url, label) => {
+                await api.grants.addDocument(item.id as number, { doc_url: url, doc_label: label });
+                await fetchItems();
+              }}
+              onRemove={async (docId) => {
+                await api.grants.removeDocument(item.id as number, docId);
+                await fetchItems();
+              }}
+            />
+          ) : (
+            <p className="text-xs text-zinc-400 text-center py-4 border border-dashed border-zinc-200 rounded-xl">
+              Documents can be attached after saving the grant for the first time.
+            </p>
+          )}
         </div>
       )}
     />

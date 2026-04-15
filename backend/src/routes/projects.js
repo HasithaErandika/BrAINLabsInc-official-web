@@ -133,3 +133,19 @@ projectsRouter.post('/:id/diagrams', async (req, res) => {
   if (error) return res.status(500).json({ error: error.message });
   res.status(201).json(data);
 });
+
+// ─── DELETE /projects/:id/diagrams/:diagId ────────────────────────────────────
+
+projectsRouter.delete('/:id/diagrams/:diagId', async (req, res) => {
+  const proj = await ownOrFail(req.params.id, req.user.sub, req.user.role, res);
+  if (!proj) return;
+
+  const { error } = await supabase
+    .from('project_diagram')
+    .delete()
+    .eq('id', req.params.diagId)
+    .eq('project_id', req.params.id);
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ message: 'Diagram removed' });
+});

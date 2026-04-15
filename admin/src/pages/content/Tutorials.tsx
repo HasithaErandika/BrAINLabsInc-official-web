@@ -6,6 +6,7 @@ import type { Tutorial, ApprovalStatus } from "../../types";
 import { ContentPageTemplate } from "../../components/shared/ContentPageTemplate";
 import { Input } from "../../components/ui/Input";
 import { Badge } from "../../components/ui/Badge";
+import { MarkdownEditor } from "../../components/ui/MarkdownEditor";
 import { renderMarkdown } from "../../lib/utils/markdown";
 
 export default function TutorialsPage() {
@@ -72,94 +73,80 @@ export default function TutorialsPage() {
       onToggleStatus={isAdmin() ? handleToggleStatus : undefined}
       searchFields={(item) => [item.title, item.description || ""]}
       filterOptions={[
-        { label: "ALL", value: "ALL" },
-        { label: "PUBLISHED", value: "APPROVED" },
-        { label: "PENDING", value: "PENDING_ADMIN" },
-        { label: "DRAFT", value: "DRAFT" },
+        { label: "All", value: "ALL" },
+        { label: "Published", value: "APPROVED" },
+        { label: "Pending", value: "PENDING_ADMIN" },
+        { label: "Draft", value: "DRAFT" },
       ]}
       renderListItem={(item, onClick) => (
-        <div 
-          key={item.id} 
-          onClick={onClick} 
-          className="group bg-white border border-zinc-200 hover:border-zinc-400 hover:shadow-sm rounded-xl p-5 cursor-pointer flex flex-col gap-4 transition-all"
+        <div
+          key={item.id}
+          onClick={onClick}
+          className="group bg-white border border-zinc-200 hover:border-zinc-300 hover:shadow-lg hover:shadow-zinc-100 rounded-2xl p-5 cursor-pointer flex flex-col gap-3 transition-all duration-200"
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-black text-white shrink-0">
-                <GraduationCap size={14} />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center">
+                <GraduationCap size={14} className="text-zinc-600" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Tutorial</span>
+              <span className="text-xs font-medium text-zinc-400">Tutorial</span>
             </div>
             <Badge status={item.approval_status} />
           </div>
-          
-          <div className="space-y-2">
-            <h3 className="text-lg font-black text-black uppercase tracking-tight leading-tight line-clamp-2">{item.title}</h3>
+
+          <div className="space-y-1.5">
+            <h3 className="text-sm font-semibold text-zinc-900 leading-snug line-clamp-2">{item.title}</h3>
             {item.description && (
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-tight line-clamp-2 italic">
-                {item.description}
-              </p>
+              <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">{item.description}</p>
             )}
           </div>
 
-          <div className="pt-4 border-t border-zinc-100 flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em]">
-            <span className="flex items-center gap-2 text-black">
-              <BookOpen size={12} /> View tutorial
+          <div className="pt-3 border-t border-zinc-100 flex items-center justify-between">
+            <span className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
+              <BookOpen size={11} /> View tutorial
             </span>
-            <span className="flex items-center gap-2 text-zinc-400">
-               <Calendar size={12} /> {new Date(item.created_at).toLocaleDateString()}
+            <span className="text-xs text-zinc-400 flex items-center gap-1">
+              <Calendar size={11} /> {new Date(item.created_at).toLocaleDateString()}
             </span>
           </div>
         </div>
       )}
       renderDetail={(item) => (
-        <div className="space-y-12 pb-20">
-            {item.description && (
-              <div className="p-8 border border-zinc-200 bg-zinc-50 italic text-sm text-zinc-600 leading-relaxed font-bold uppercase tracking-tight">
-                "{item.description}"
-              </div>
-            )}
-            
-            <div className="prose prose-zinc max-w-none text-black leading-loose">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-8 ml-1">Content</h4>
-              <div className="markdown-monochrome">
-                {renderMarkdown(item.content || "")}
-              </div>
+        <div className="space-y-8 pb-20 animate-enter">
+          {item.description && (
+            <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 text-sm text-zinc-900 italic font-medium leading-relaxed">
+              "{item.description}"
             </div>
+          )}
+          <div className="prose max-w-none">
+            <div className="markdown-monochrome">{renderMarkdown(item.content || "")}</div>
+          </div>
         </div>
       )}
       renderEdit={(item, setItem) => (
-        <div className="space-y-10">
+        <div className="space-y-8">
           <Input
             label="Title"
             placeholder="Enter tutorial title..."
-            value={item.title ?? ""} 
-            onChange={e => setItem({...item, title: e.target.value})} 
+            value={item.title ?? ""}
+            onChange={e => setItem({ ...item, title: e.target.value })}
           />
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-tight text-zinc-600">
-              Summary
-            </label>
+            <label className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Summary</label>
             <textarea
-              className="input-monochrome min-h-[100px] py-4"
-              placeholder="What will learners achieve..."
+              className="input-monochrome min-h-[80px] py-3"
+              placeholder="What will learners learn or achieve?"
               value={item.description ?? ""}
-              onChange={e => setItem({...item, description: e.target.value})}
+              onChange={e => setItem({ ...item, description: e.target.value })}
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-tight text-zinc-600">
-              Content (Markdown supported)
-            </label>
-            <textarea
-              className="input-monochrome min-h-[400px] py-6 font-mono text-sm"
-              placeholder="# Start writing..."
-              value={item.content ?? ""}
-              onChange={e => setItem({...item, content: e.target.value})}
-            />
-          </div>
+          <MarkdownEditor
+            label="Content"
+            value={item.content ?? ""}
+            onChange={val => setItem({ ...item, content: val })}
+          />
         </div>
       )}
     />

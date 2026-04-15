@@ -9,12 +9,11 @@ export const authRouter = Router();
 // ─── Zod Schemas ──────────────────────────────────────────────────────────────
 
 const RegisterSchema = z.object({
-  first_name:                z.string().min(1).max(100),
-  second_name:               z.string().min(1).max(100),
-  contact_email:             z.string().email().max(150),
-  password:                  z.string().min(8).max(255),
-  role:                      z.enum(['researcher', 'research_assistant']),
-  assigned_by_researcher_id: z.number().int().positive().nullable().optional(),
+  first_name:    z.string().min(1).max(100),
+  second_name:   z.string().min(1).max(100),
+  contact_email: z.string().email().max(150),
+  password:      z.string().min(8).max(255),
+  role:          z.enum(['researcher', 'research_assistant']),
 });
 
 
@@ -76,16 +75,12 @@ authRouter.post('/register', async (req, res) => {
   }
 
   // 4. Insert role-specific row
-  const roleData = { member_id: member.id };
-  if (role === 'research_assistant' && assigned_by_researcher_id) {
-    roleData.assigned_by_researcher_id = assigned_by_researcher_id;
-  }
-
   const roleTable = role === 'researcher' ? 'researcher' : 'research_assistant';
-  const { error: roleError } = await supabase
-    .from(roleTable)
-    .insert(roleData);
+  const roleData = role === 'research_assistant'
+    ? { member_id: member.id, assigned_by_researcher_id: null, approval_status: 'PENDING_ADMIN' }
+    : { member_id: member.id };
 
+  const { error: roleError } = await supabase.from(roleTable).insert(roleData);
   if (roleError) {
     console.error('[RegistrationError] Role Insert:', roleError);
     await supabase.auth.admin.deleteUser(authUserId);
@@ -129,7 +124,24 @@ authRouter.post('/login', async (req, res) => {
 
   const { member, role, roleRow } = memberData;
 
-  // 3. Handle status-based access (Admins are implicitly approved)
+  // 3. Handle status-based access
+  if (role === 'pending_setup') {
+    // RA who hasn't selected a supervisor yet — allow login but mark as pending_setup
+    const token = signToken({ sub: member.id, role: 'pending_setup', email: member.contact_email, slug: member.slug });
+    return res.json({
+      token,
+      user: {
+        id: member.id,
+        first_name: member.first_name,
+        second_name: member.second_name,
+        email: member.contact_email,
+        slug: member.slug,
+        role: 'pending_setup',
+        approval_status: null,
+      },
+    });
+  }
+
   if (role !== 'admin' && roleRow?.approval_status === 'REJECTED') {
     return res.status(403).json({ error: 'Account access denied. Your application was rejected.' });
   }
@@ -152,6 +164,7 @@ authRouter.post('/login', async (req, res) => {
       slug:          member.slug,
       role,
       approval_status: role === 'admin' ? null : roleRow?.approval_status,
+      assigned_by_researcher_id: role === 'research_assistant' ? (roleRow?.assigned_by_researcher_id ?? null) : undefined,
     },
   });
 });

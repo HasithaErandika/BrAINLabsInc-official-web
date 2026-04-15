@@ -12,6 +12,7 @@ export interface AuthUser {
   slug: string;
   role: MemberRole;
   approval_status: ApprovalStatus | null;
+  assigned_by_researcher_id?: number | null;
 }
 
 interface AuthState {

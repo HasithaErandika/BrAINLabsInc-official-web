@@ -188,22 +188,18 @@ export function AppLayout() {
   );
 
   const navClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
-      isActive
-        ? "bg-zinc-900 text-white"
-        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100"
-    }`;
+    `nav-item ${isActive ? 'active' : ''}`;
 
   const unreadCount = notifications.length;
 
   // ── Sidebar ───────────────────────────────────────────────────────────────────
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-white border-r border-zinc-100 px-4 py-5">
+    <div className="flex flex-col h-full bg-white border-r border-zinc-100/80 px-3 py-5">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-2 mb-8">
-        <div className="w-8 h-8 bg-zinc-900 flex items-center justify-center shrink-0">
-          <img src="/logo.png" alt="" className="w-5 h-5 object-contain invert" />
+      <div className="flex items-center gap-3 px-2 mb-7">
+        <div className="w-8 h-8 rounded-xl bg-zinc-900 flex items-center justify-center shrink-0">
+          <img src="/logo.png" alt="" className="w-4.5 h-4.5 object-contain invert" />
         </div>
         <div>
           <p className="text-[13px] font-bold text-zinc-900 leading-none">BrAIN Labs</p>
@@ -214,12 +210,12 @@ export function AppLayout() {
       </div>
 
       {/* Main nav */}
-      <nav className="flex-1 overflow-y-auto space-y-7">
+      <nav className="flex-1 overflow-y-auto space-y-5">
         <div className="space-y-0.5">
           <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest px-3 mb-2">Navigation</p>
           {filteredMain.map(item => (
             <NavLink key={item.path} to={item.path} onClick={() => setMobileOpen(false)} className={navClass}>
-              <item.icon size={16} />
+              <item.icon size={15} />
               <span>{item.label}</span>
             </NavLink>
           ))}
@@ -228,7 +224,7 @@ export function AppLayout() {
           <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest px-3 mb-2">Account</p>
           {filteredSettings.map(item => (
             <NavLink key={item.path} to={item.path} onClick={() => setMobileOpen(false)} className={navClass}>
-              <item.icon size={16} />
+              <item.icon size={15} />
               <span>{item.label}</span>
             </NavLink>
           ))}
@@ -238,7 +234,7 @@ export function AppLayout() {
       {/* User footer */}
       <div className="border-t border-zinc-100 pt-4 mt-4">
         <div className="flex items-center gap-3 px-2">
-          <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center text-[11px] font-bold text-white shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-zinc-900 flex items-center justify-center text-[11px] font-bold text-white shrink-0">
             {user?.first_name?.[0]}{user?.second_name?.[0]}
           </div>
           <div className="flex-1 min-w-0">
@@ -249,13 +245,6 @@ export function AppLayout() {
               {user?.role?.replace("_", " ")}
             </p>
           </div>
-          <button
-            onClick={handleLogout}
-            title="Sign out"
-            className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-all"
-          >
-            <LogOut size={15} />
-          </button>
         </div>
       </div>
     </div>
@@ -264,7 +253,7 @@ export function AppLayout() {
   // ── Layout ────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-screen bg-zinc-50 overflow-hidden font-['Inter'] antialiased">
+    <div className="flex h-screen bg-[#f8f8fb] overflow-hidden font-['Inter'] antialiased">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-60 shrink-0">
         <SidebarContent />
@@ -446,20 +435,21 @@ export function AppLayout() {
               )}
             </div>
 
-            {/* Sign-out icon */}
+            {/* Sign-out button */}
             <button
               onClick={handleLogout}
               title="Sign out"
-              className="p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
             >
-              <LogOut size={17} />
+              <LogOut size={14} />
+              <span className="hidden sm:inline">Sign out</span>
             </button>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
-          <div className="max-w-6xl mx-auto">
+        <main className="flex-1 overflow-y-auto">
+          <div className="w-full h-full p-6 lg:p-8 max-w-7xl mx-auto">
             <Outlet />
           </div>
         </main>

@@ -148,6 +148,242 @@ meRouter.delete('/ongoing-research/:id', requireRole('researcher', 'admin'), asy
   res.json({ message: 'Ongoing research entry removed' });
 });
 
+// ─── GET /me/my-supervisor — RA fetches full details of their supervisor ───────
+meRouter.get('/my-supervisor', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  if (req.user.role !== 'research_assistant') {
+    return res.status(403).json({ error: 'Only research assistants have a supervisor' });
+  }
+
+  // Get the RA's assigned_by_researcher_id
+  const { data: raData, error: raError } = await supabase
+    .from('research_assistant')
+    .select('assigned_by_researcher_id')
+    .eq('member_id', req.user.sub)
+    .single();
+
+  if (raError || !raData?.assigned_by_researcher_id) {
+    return res.status(404).json({ error: 'No supervisor assigned' });
+  }
+
+  // Fetch supervisor's member details
+  const { data: memberData, error: memberError } = await supabase
+    .from('member')
+    .select('id, first_name, second_name, contact_email, image_url')
+    .eq('id', raData.assigned_by_researcher_id)
+    .single();
+
+  if (memberError || !memberData) {
+    return res.status(404).json({ error: 'Supervisor not found' });
+  }
+
+  // Also fetch their researcher profile details
+  const { data: resData } = await supabase
+    .from('researcher')
+    .select('occupation, workplace, bio')
+    .eq('member_id', raData.assigned_by_researcher_id)
+    .single();
+
+  res.json({ ...memberData, ...(resData ?? {}) });
+});
+
+// ─── GET /me/my-assistants — Researcher fetches their assigned RAs ─────────────
+meRouter.get('/my-assistants', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  if (req.user.role !== 'researcher') {
+    return res.status(403).json({ error: 'Only researchers have assistants' });
+  }
+
+  const { data, error } = await supabase
+    .from('research_assistant')
+    .select('member_id, approval_status, member ( id, first_name, second_name, contact_email )')
+    .eq('assigned_by_researcher_id', req.user.sub);
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  const flat = (data ?? [])
+    .filter(r => r.member)
+    .map(r => ({
+      member_id:       r.member_id,
+      approval_status: r.approval_status,
+      id:              r.member.id,
+      first_name:      r.member.first_name,
+      second_name:     r.member.second_name,
+      contact_email:   r.member.contact_email,
+    }));
+
+  res.json(flat);
+});
+
+// ─── DELETE /me/my-assistants/:raId — Researcher UNASSIGNS an RA (null supervisor) ─
+meRouter.delete('/my-assistants/:raId', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  if (req.user.role !== 'researcher') {
+    return res.status(403).json({ error: 'Only researchers can remove assistants' });
+  }
+
+  const raId = Number(req.params.raId);
+  if (!raId) return res.status(400).json({ error: 'Invalid RA member ID' });
+
+  // Verify this RA is actually assigned to this researcher
+  const { data: verify } = await supabase
+    .from('research_assistant')
+    .select('member_id')
+    .eq('member_id', raId)
+    .eq('assigned_by_researcher_id', req.user.sub)
+    .single();
+
+  if (!verify) return res.status(404).json({ error: 'Research assistant not found under your supervision' });
+
+  // Unassign: set assigned_by_researcher_id to null (RA keeps their role, works alone)
+  const { error } = await supabase
+    .from('research_assistant')
+    .update({ assigned_by_researcher_id: null })
+    .eq('member_id', raId);
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ message: 'Research assistant unassigned successfully' });
+});
+
+// ─── GET /me/available-assistants — Researcher searches all RAs (incl. unassigned) ─
+meRouter.get('/available-assistants', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  if (req.user.role !== 'researcher') {
+    return res.status(403).json({ error: 'Only researchers can search assistants' });
+  }
+
+  const search = (req.query.q ?? '').toLowerCase();
+
+  const { data, error } = await supabase
+    .from('research_assistant')
+    .select('member_id, assigned_by_researcher_id, approval_status, member ( id, first_name, second_name, contact_email )');
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  let flat = (data ?? [])
+    .filter(r => r.member)
+    .map(r => ({
+      member_id:                 r.member_id,
+      assigned_by_researcher_id: r.assigned_by_researcher_id,
+      already_mine:              r.assigned_by_researcher_id === req.user.sub,
+      approval_status:           r.approval_status,
+      id:                        r.member.id,
+      first_name:                r.member.first_name,
+      second_name:               r.member.second_name,
+      contact_email:             r.member.contact_email,
+    }));
+
+  // Filter by search query if provided
+  if (search) {
+    flat = flat.filter(r =>
+      `${r.first_name} ${r.second_name} ${r.contact_email}`.toLowerCase().includes(search)
+    );
+  }
+
+  res.json(flat);
+});
+
+// ─── POST /me/my-assistants — Researcher assigns an RA to themselves ───────────
+meRouter.post('/my-assistants', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  if (req.user.role !== 'researcher') {
+    return res.status(403).json({ error: 'Only researchers can assign assistants' });
+  }
+
+  const { ra_member_id } = req.body;
+  if (!ra_member_id || typeof ra_member_id !== 'number') {
+    return res.status(400).json({ error: 'ra_member_id must be a number' });
+  }
+
+  // Verify RA exists
+  const { data: raRow } = await supabase
+    .from('research_assistant')
+    .select('member_id, assigned_by_researcher_id')
+    .eq('member_id', ra_member_id)
+    .single();
+
+  if (!raRow) return res.status(404).json({ error: 'Research assistant not found' });
+  if (raRow.assigned_by_researcher_id === req.user.sub) {
+    return res.status(409).json({ error: 'This assistant is already assigned to you' });
+  }
+
+  // Assign the RA to this researcher
+  const { error } = await supabase
+    .from('research_assistant')
+    .update({ assigned_by_researcher_id: req.user.sub })
+    .eq('member_id', ra_member_id);
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ message: 'Research assistant assigned successfully' });
+});
+
+// ─── GET /me/supervisors — list approved researchers for RA to pick from ───────
+// Accessible by pending_setup tokens as well as existing RAs re-assigning
+meRouter.get('/supervisors', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  const allowedRoles = ['research_assistant', 'pending_setup'];
+  if (!allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Only research assistants can view supervisors' });
+  }
+
+  const { data, error } = await supabase
+    .from('researcher')
+    .select('member_id, member ( id, first_name, second_name )')
+    .eq('approval_status', 'APPROVED');
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  // Flatten nested member data into a simple list
+  const flat = (data ?? [])
+    .filter(r => r.member)
+    .map(r => ({
+      id:          r.member.id,
+      first_name:  r.member.first_name,
+      second_name: r.member.second_name,
+    }));
+
+  res.json(flat);
+});
+
+// ─── PATCH /me/supervisor — UPSERT (first setup OR re-assignment) ─────────────
+// Allowed for pending_setup (first time) AND research_assistant (re-assignment)
+
+meRouter.patch('/supervisor', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  if (req.user.role !== 'research_assistant' && req.user.role !== 'pending_setup') {
+    return res.status(403).json({ error: 'Only research assistants can set a supervisor' });
+  }
+
+  const { assigned_by_researcher_id } = req.body;
+
+  if (!assigned_by_researcher_id || typeof assigned_by_researcher_id !== 'number') {
+    return res.status(400).json({ error: 'assigned_by_researcher_id must be a number' });
+  }
+
+  // Verify the researcher exists
+  const { data: researcher, error: researcherError } = await supabase
+    .from('researcher')
+    .select('member_id')
+    .eq('member_id', assigned_by_researcher_id)
+    .single();
+
+  if (researcherError || !researcher) {
+    return res.status(404).json({ error: 'Researcher not found' });
+  }
+
+  // UPSERT: insert row if first setup, update if already exists
+  const { error } = await supabase
+    .from('research_assistant')
+    .upsert(
+      { member_id: req.user.sub, assigned_by_researcher_id, approval_status: 'PENDING_ADMIN' },
+      { onConflict: 'member_id' }
+    );
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.json({ message: 'Supervisor assigned successfully', assigned_by_researcher_id });
+});
+
 // ─── POST /me/change-password ───────────────────────────────────────────────
 
 meRouter.post('/change-password', async (req, res) => {

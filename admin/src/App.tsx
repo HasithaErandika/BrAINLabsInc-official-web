@@ -53,7 +53,6 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-
           {/* Protected admin routes */}
           <Route
             path="/"

@@ -133,3 +133,19 @@ tutorialsRouter.post('/:id/images', async (req, res) => {
   if (error) return res.status(500).json({ error: error.message });
   res.status(201).json(data);
 });
+
+// ─── DELETE /tutorials/:id/images/:imgId ─────────────────────────────────────
+
+tutorialsRouter.delete('/:id/images/:imgId', async (req, res) => {
+  const tut = await ownOrFail(req.params.id, req.user.sub, req.user.role, res);
+  if (!tut) return;
+
+  const { error } = await supabase
+    .from('tutorial_image')
+    .delete()
+    .eq('id', req.params.imgId)
+    .eq('tutorial_id', req.params.id);
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ message: 'Image removed' });
+});

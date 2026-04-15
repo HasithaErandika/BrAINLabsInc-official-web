@@ -217,7 +217,7 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
                 disabled={saving || !formData.first_name || !formData.second_name || success}
                 className={cn(
                   "flex items-center gap-4 px-12 py-5 text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl shadow-2xl transition-all active:scale-95 disabled:opacity-50",
-                  success ? "bg-emerald-600 shadow-emerald-500/20 translate-y-[-2px]" : "bg-black shadow-zinc-900/20 hover:bg-zinc-800 hover:shadow-zinc-900/30"
+                  success ? "bg-zinc-900 shadow-zinc-900/20 translate-y-[-2px]" : "bg-black shadow-zinc-900/20 hover:bg-zinc-800 hover:shadow-zinc-900/30"
                 )}
               >
                 {success ? (

@@ -8,9 +8,9 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { token, _hasHydrated } = useAuth();
 
-  // If the store hasn't hydrated yet, don't decide on redirection
+  // Wait for store hydration before deciding on redirects
   if (!_hasHydrated) {
-    return null; // Or a minimal loading spinner
+    return null;
   }
 
   if (!token) {

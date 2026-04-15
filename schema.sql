@@ -59,10 +59,9 @@ CREATE TABLE researcher (
 -- Research Assistant is a specialisation of member (ISA)
 CREATE TABLE research_assistant (
     member_id                   INT PRIMARY KEY,
-    -- FIX D1: assigned_by_researcher_id is NOT NULL — an RA must always have
-    -- an assigning researcher. FK is RESTRICT so we cannot delete a researcher
-    -- who still has active RAs under them.
-    assigned_by_researcher_id   INT NOT NULL,
+    -- Nullable: an RA can work independently without a supervisor.
+    -- A researcher assigns an RA to themselves via the dashboard.
+    assigned_by_researcher_id   INT,
 
     approval_status             approval_status_enum    DEFAULT 'PENDING_ADMIN',
     approved_by_admin_id        INT,
@@ -73,7 +72,7 @@ CREATE TABLE research_assistant (
     CONSTRAINT fk_ra_member
         FOREIGN KEY (member_id)                 REFERENCES member(id)               ON DELETE CASCADE,
     CONSTRAINT fk_ra_assigned_by
-        FOREIGN KEY (assigned_by_researcher_id) REFERENCES researcher(member_id)    ON DELETE RESTRICT,
+        FOREIGN KEY (assigned_by_researcher_id) REFERENCES researcher(member_id)    ON DELETE SET NULL,
     CONSTRAINT fk_ra_approved_by
         FOREIGN KEY (approved_by_admin_id)      REFERENCES admin(member_id)         ON DELETE SET NULL
 );

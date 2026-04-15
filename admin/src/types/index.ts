@@ -1,7 +1,7 @@
 // src/types/index.ts — Shared TypeScript interfaces and enums
 
 export type ApprovalStatus = 'DRAFT' | 'PENDING_RESEARCHER' | 'PENDING_ADMIN' | 'APPROVED' | 'REJECTED';
-export type MemberRole = 'admin' | 'researcher' | 'research_assistant' | 'pending';
+export type MemberRole = 'admin' | 'researcher' | 'research_assistant' | 'pending_setup' | 'pending';
 export type FormerRole = 'RESEARCHER' | 'RESEARCH_ASSISTANT';
 
 export interface BaseMember {
@@ -55,8 +55,10 @@ export interface Blog {
   approved_by_admin_id?: number | null;
   created_at: string;
   updated_at: string;
-  keywords?: { id: number; keyword: string }[];
-  images?: { id: number; image_url: string }[];
+  keywords?: { id: number; keyword: string }[];    // blog_keyword table rows
+  images?: { id: number; image_url: string }[];     // blog_image table rows
+  blog_keyword?: { id: number; keyword: string }[]; // raw Supabase key
+  blog_image?: { id: number; image_url: string }[]; // raw Supabase key
 }
 
 export interface Tutorial {
