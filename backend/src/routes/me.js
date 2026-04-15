@@ -148,6 +148,36 @@ meRouter.delete('/ongoing-research/:id', requireRole('researcher', 'admin'), asy
   res.json({ message: 'Ongoing research entry removed' });
 });
 
+// ─── PATCH /me/supervisor (research_assistant only) ───────────────────────────
+
+meRouter.patch('/supervisor', requireRole('research_assistant'), async (req, res) => {
+  const { assigned_by_researcher_id } = req.body;
+
+  if (!assigned_by_researcher_id || typeof assigned_by_researcher_id !== 'number') {
+    return res.status(400).json({ error: 'assigned_by_researcher_id must be a number' });
+  }
+
+  // Verify the researcher exists
+  const { data: researcher, error: researcherError } = await supabase
+    .from('researcher')
+    .select('member_id')
+    .eq('member_id', assigned_by_researcher_id)
+    .single();
+
+  if (researcherError || !researcher) {
+    return res.status(404).json({ error: 'Researcher not found' });
+  }
+
+  const { error } = await supabase
+    .from('research_assistant')
+    .update({ assigned_by_researcher_id })
+    .eq('member_id', req.user.sub);
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.json({ message: 'Supervisor assigned successfully', assigned_by_researcher_id });
+});
+
 // ─── POST /me/change-password ───────────────────────────────────────────────
 
 meRouter.post('/change-password', async (req, res) => {

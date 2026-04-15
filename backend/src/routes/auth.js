@@ -152,6 +152,7 @@ authRouter.post('/login', async (req, res) => {
       slug:          member.slug,
       role,
       approval_status: role === 'admin' ? null : roleRow?.approval_status,
+      assigned_by_researcher_id: role === 'research_assistant' ? (roleRow?.assigned_by_researcher_id ?? null) : undefined,
     },
   });
 });

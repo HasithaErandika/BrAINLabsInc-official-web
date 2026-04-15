@@ -249,13 +249,6 @@ export function AppLayout() {
               {user?.role?.replace("_", " ")}
             </p>
           </div>
-          <button
-            onClick={handleLogout}
-            title="Sign out"
-            className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-all"
-          >
-            <LogOut size={15} />
-          </button>
         </div>
       </div>
     </div>
@@ -459,7 +452,7 @@ export function AppLayout() {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-6 lg:p-8">
-          <div className="max-w-6xl mx-auto">
+          <div className="w-full h-full">
             <Outlet />
           </div>
         </main>

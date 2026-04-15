@@ -67,11 +67,6 @@ export default function Register() {
       return;
     }
 
-    if (formData.role === "research_assistant" && !formData.assigned_by_researcher_id) {
-      setError("Research Assistants must be assigned to a Researcher.");
-      setLoading(false);
-      return;
-    }
 
     try {
       await apiClient.post("/auth/register", {
@@ -334,29 +329,7 @@ export default function Register() {
                   </div>
                 </div>
 
-                {/* RA supervisor */}
-                {formData.role === "research_assistant" && (
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-zinc-700 uppercase tracking-wide">Supervisor Researcher</label>
-                    <select
-                      name="assigned_by_researcher_id"
-                      required
-                      value={formData.assigned_by_researcher_id}
-                      onChange={handleChange}
-                      className="w-full h-11 px-4 bg-white border border-zinc-200 rounded-xl text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-zinc-900 transition-all appearance-none cursor-pointer"
-                    >
-                      <option value="">Select your supervisor</option>
-                      {researchers.map(r => (
-                        <option key={r.id} value={r.id}>
-                          Dr. {r.first_name} {r.second_name}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-[10px] text-zinc-400">Research Assistants require a researcher supervisor.</p>
-                  </div>
-                )}
 
-                {/* Error */}
                 {error && (
                   <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
                     <p className="text-xs font-semibold text-red-600">{error}</p>
