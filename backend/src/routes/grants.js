@@ -11,7 +11,7 @@ grantsRouter.use(requireAuth, requireRole('researcher', 'admin'));
 // ─── Zod Schemas ──────────────────────────────────────────────────────────────
 
 const GrantSchema = z.object({
-  title:       z.string().min(1).max(255),
+  title:       z.string().max(255).optional().nullable(),
   description: z.string().optional().nullable(),
   passed_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   expire_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
@@ -27,7 +27,7 @@ const DocumentSchema = z.object({
 async function ownOrFail(grantId, memberId, role, res) {
   const { data, error } = await supabase
     .from('grant_info')
-    .select('id, created_by_researcher')
+    .select('id, created_by_researcher, approval_status')
     .eq('id', grantId)
     .single();
   if (error || !data) { res.status(404).json({ error: 'Grant not found' }); return null; }
@@ -45,7 +45,11 @@ grantsRouter.get('/', async (req, res) => {
     .select('*, grant_document(id, doc_url, doc_label)')
     .order('created_at', { ascending: false });
 
-  if (req.user.role !== 'admin') {
+  // Admin only needs to see Pending and Published (Approved)
+  if (req.user.role === 'admin') {
+    query = query.in('approval_status', ['PENDING_ADMIN', 'APPROVED']);
+  } else {
+    // Others see only their own
     query = query.eq('created_by_researcher', req.user.sub);
   }
 
@@ -64,10 +68,15 @@ grantsRouter.post('/', async (req, res) => {
   const parsed = GrantSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
+  const { title, description, passed_date, expire_date } = parsed.data;
+
   const { data, error } = await supabase
     .from('grant_info')
     .insert({
-      ...parsed.data,
+      title: title || 'Untitled Grant',
+      description: description || null,
+      passed_date: passed_date || null,
+      expire_date: expire_date || null,
       created_by_researcher: req.user.sub,
       approval_status: 'DRAFT',
     })
@@ -103,9 +112,19 @@ grantsRouter.put('/:id', async (req, res) => {
   const parsed = GrantSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
+  // Admin and Researchers reviewing don't reset to DRAFT
+  const updatePayload = { ...parsed.data };
+  if (req.user.role !== 'admin') {
+    // Grants are researcher-only, so we check if it's already PENDING_ADMIN
+    const isReviewing = req.user.role === 'researcher' && grant.approval_status === 'PENDING_ADMIN';
+    if (!isReviewing) {
+      updatePayload.approval_status = 'DRAFT';
+    }
+  }
+
   const { data, error } = await supabase
     .from('grant_info')
-    .update({ ...parsed.data, approval_status: 'DRAFT' })
+    .update(updatePayload)
     .eq('id', req.params.id)
     .select()
     .single();
@@ -119,6 +138,11 @@ grantsRouter.put('/:id', async (req, res) => {
 grantsRouter.delete('/:id', async (req, res) => {
   const grant = await ownOrFail(req.params.id, req.user.sub, req.user.role, res);
   if (!grant) return;
+
+  // Restriction: Only DRAFT content can be deleted by authors.
+  if (req.user.role !== 'admin' && grant.approval_status !== 'DRAFT') {
+    return res.status(403).json({ error: `Cannot delete content in ${grant.approval_status} state` });
+  }
 
   const { error } = await supabase.from('grant_info').delete().eq('id', req.params.id);
   if (error) return res.status(500).json({ error: error.message });

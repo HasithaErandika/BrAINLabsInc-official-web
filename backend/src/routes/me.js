@@ -17,11 +17,11 @@ meRouter.use(requireAuth);
 // ─── Zod Schemas ──────────────────────────────────────────────────────────────
 
 const UpdateProfileSchema = z.object({
-  first_name:   z.string().min(1).max(100).optional(),
-  second_name:  z.string().min(1).max(100).optional(),
+  first_name:   z.string().min(1, 'First name is required').max(100).optional(),
+  second_name:  z.string().min(1, 'Second name is required').max(100).optional(),
   country:      z.string().max(100).optional().nullable(),
-  linkedin_url: z.string().url().max(255).optional().nullable(),
-  image_url:    z.string().url().max(255).optional().nullable(),
+  linkedin_url: z.string().url('Invalid LinkedIn URL').or(z.literal('')).optional().nullable(),
+  image_url:    z.string().url('Invalid Image URL').or(z.literal('')).optional().nullable(),
   bio:          z.string().optional().nullable(),
   occupation:   z.string().max(150).optional().nullable(),
   workplace:    z.string().max(150).optional().nullable(),
@@ -84,7 +84,10 @@ meRouter.get('/', async (req, res) => {
 
 meRouter.put('/', async (req, res) => {
   const parsed = UpdateProfileSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+  if (!parsed.success) {
+    const errorMessages = parsed.error.errors.map(e => e.message).join(', ');
+    return res.status(400).json({ error: errorMessages });
+  }
 
   const { first_name, second_name, country, linkedin_url, image_url, bio, occupation, workplace } = parsed.data;
 
@@ -169,7 +172,7 @@ meRouter.get('/my-supervisor', async (req, res) => {
   // Fetch supervisor's member details
   const { data: memberData, error: memberError } = await supabase
     .from('member')
-    .select('id, first_name, second_name, contact_email, image_url')
+    .select('id, first_name, second_name, contact_email')
     .eq('id', raData.assigned_by_researcher_id)
     .single();
 
@@ -180,11 +183,21 @@ meRouter.get('/my-supervisor', async (req, res) => {
   // Also fetch their researcher profile details
   const { data: resData } = await supabase
     .from('researcher')
-    .select('occupation, workplace, bio')
+    .select('occupation, workplace, bio, image_url')
     .eq('member_id', raData.assigned_by_researcher_id)
     .single();
 
-  res.json({ ...memberData, ...(resData ?? {}) });
+  // Also fetch assigned research projects
+  const { data: projects } = await supabase
+    .from('research_assistant_ongoing_research')
+    .select('research_id, ongoing_research ( title )')
+    .eq('ra_member_id', req.user.sub);
+
+  res.json({ 
+    ...memberData, 
+    ...(resData ?? {}), 
+    assigned_projects: (projects ?? []).map(p => ({ id: p.research_id, title: p.ongoing_research?.title }))
+  });
 });
 
 // ─── GET /me/my-assistants — Researcher fetches their assigned RAs ─────────────
@@ -196,7 +209,12 @@ meRouter.get('/my-assistants', async (req, res) => {
 
   const { data, error } = await supabase
     .from('research_assistant')
-    .select('member_id, approval_status, member ( id, first_name, second_name, contact_email )')
+    .select(`
+      member_id, 
+      approval_status, 
+      member ( id, first_name, second_name, contact_email ),
+      research_assistant_ongoing_research ( research_id, ongoing_research ( title ) )
+    `)
     .eq('assigned_by_researcher_id', req.user.sub);
 
   if (error) return res.status(500).json({ error: error.message });
@@ -210,6 +228,10 @@ meRouter.get('/my-assistants', async (req, res) => {
       first_name:      r.member.first_name,
       second_name:     r.member.second_name,
       contact_email:   r.member.contact_email,
+      assigned_projects: (r.research_assistant_ongoing_research ?? []).map(p => ({
+        id: p.research_id,
+        title: p.ongoing_research?.title
+      }))
     }));
 
   res.json(flat);
@@ -290,7 +312,7 @@ meRouter.post('/my-assistants', async (req, res) => {
     return res.status(403).json({ error: 'Only researchers can assign assistants' });
   }
 
-  const { ra_member_id } = req.body;
+  const { ra_member_id, research_id } = req.body;
   if (!ra_member_id || typeof ra_member_id !== 'number') {
     return res.status(400).json({ error: 'ra_member_id must be a number' });
   }
@@ -303,17 +325,26 @@ meRouter.post('/my-assistants', async (req, res) => {
     .single();
 
   if (!raRow) return res.status(404).json({ error: 'Research assistant not found' });
-  if (raRow.assigned_by_researcher_id === req.user.sub) {
-    return res.status(409).json({ error: 'This assistant is already assigned to you' });
-  }
-
-  // Assign the RA to this researcher
+  
+  // Assign/Reassign the RA to this researcher
   const { error } = await supabase
     .from('research_assistant')
     .update({ assigned_by_researcher_id: req.user.sub })
     .eq('member_id', ra_member_id);
 
   if (error) return res.status(500).json({ error: error.message });
+
+  // Handle optional specific research project assignment
+  if (research_id) {
+    // First clear existing assignments to projects for this RA if we want only one, 
+    // or just add if we support multiple. The request says "assign to research", 
+    // I'll assume we replace the project assignment or add to it.
+    // For simplicity, let's allow adding.
+    await supabase
+      .from('research_assistant_ongoing_research')
+      .upsert({ ra_member_id: ra_member_id, research_id: research_id }, { onConflict: 'ra_member_id,research_id' });
+  }
+
   res.json({ message: 'Research assistant assigned successfully' });
 });
 

@@ -9,32 +9,32 @@ publicationsRouter.use(requireAuth);
 // ─── Zod Schemas ──────────────────────────────────────────────────────────────
 
 const PublicationSchema = z.object({
-  title:            z.string().min(1).max(255),
+  title:            z.string().max(255).optional().nullable(),
   authors:          z.string().max(500).optional().nullable(),
   publication_year: z.number().int().min(1900).max(2100).optional().nullable(),
 });
 
 const ConferencePaperSchema = z.object({
-  paper_id:    z.string().min(1).max(100),
-  link:        z.string().url().max(255).optional().nullable(),
+  paper_id:    z.string().max(100).optional().nullable(),
+  link:        z.string().max(255).optional().nullable(),
   description: z.string().optional().nullable(),
 });
 
 const BookSchema = z.object({
-  isbn:        z.string().min(1).max(50),
-  link:        z.string().url().max(255).optional().nullable(),
+  isbn:        z.string().max(50).optional().nullable(),
+  link:        z.string().max(255).optional().nullable(),
   description: z.string().optional().nullable(),
 });
 
 const JournalSchema = z.object({
-  issn:        z.string().min(1).max(50),
-  link:        z.string().url().max(255).optional().nullable(),
+  issn:        z.string().max(50).optional().nullable(),
+  link:        z.string().max(255).optional().nullable(),
   description: z.string().optional().nullable(),
 });
 
 const ArticleSchema = z.object({
-  doi:         z.string().min(1).max(100),
-  link:        z.string().url().max(255).optional().nullable(),
+  doi:         z.string().max(100).optional().nullable(),
+  link:        z.string().max(255).optional().nullable(),
   description: z.string().optional().nullable(),
 });
 
@@ -50,16 +50,38 @@ const SUBTYPE_MAP = {
 // ─── Helper: own-or-admin check ───────────────────────────────────────────────
 
 async function ownOrFail(pubId, memberId, role, res) {
-  const { data, error } = await supabase
+  const { data: pub, error } = await supabase
     .from('publication')
-    .select('id, created_by_member_id')
+    .select('id, created_by_member_id, approval_status')
     .eq('id', pubId)
     .single();
-  if (error || !data) { res.status(404).json({ error: 'Publication not found' }); return null; }
-  if (role !== 'admin' && data.created_by_member_id !== memberId) {
-    res.status(403).json({ error: 'Not authorised to modify this publication' }); return null;
+
+  if (error || !pub) {
+    res.status(404).json({ error: 'Publication not found' });
+    return null;
   }
-  return data;
+
+  // Admin always allowed
+  if (role === 'admin') return pub;
+
+  // Owner always allowed
+  if (pub.created_by_member_id === memberId) return pub;
+
+  // Researcher allowed if it's their RA's content and pending researcher review
+  if (role === 'researcher' && pub.approval_status === 'PENDING_RESEARCHER') {
+    const { data: ra } = await supabase
+      .from('research_assistant')
+      .select('assigned_by_researcher_id')
+      .eq('member_id', pub.created_by_member_id)
+      .single();
+
+    if (ra && ra.assigned_by_researcher_id === memberId) {
+      return pub;
+    }
+  }
+
+  res.status(403).json({ error: 'Not authorised to modify this publication' });
+  return null;
 }
 
 // ─── GET /publications ────────────────────────────────────────────────────────
@@ -76,7 +98,24 @@ publicationsRouter.get('/', async (req, res) => {
     `)
     .order('created_at', { ascending: false });
 
-  if (req.user.role !== 'admin') {
+  // Admin only needs to see Pending and Published (Approved)
+  if (req.user.role === 'admin') {
+    query = query.in('approval_status', ['PENDING_ADMIN', 'APPROVED']);
+  } else if (req.user.role === 'researcher') {
+    // Researcher sees their own OR their assistants' pending items
+    const { data: assistants } = await supabase
+      .from('research_assistant')
+      .select('member_id')
+      .eq('assigned_by_researcher_id', req.user.sub);
+    const assistantIds = (assistants ?? []).map(a => a.member_id);
+    
+    if (assistantIds.length > 0) {
+      query = query.or(`created_by_member_id.eq.${req.user.sub},and(created_by_member_id.in.(${assistantIds.join(',')}),approval_status.eq.PENDING_RESEARCHER)`);
+    } else {
+      query = query.eq('created_by_member_id', req.user.sub);
+    }
+  } else {
+    // Others see only their own
     query = query.eq('created_by_member_id', req.user.sub);
   }
 
@@ -91,10 +130,14 @@ publicationsRouter.post('/', async (req, res) => {
   const parsed = PublicationSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
+  const { title, authors, publication_year } = parsed.data;
+
   const { data, error } = await supabase
     .from('publication')
     .insert({
-      ...parsed.data,
+      title: title || 'Untitled',
+      authors: authors || '',
+      publication_year: publication_year || null,
       created_by_member_id: req.user.sub,
       approval_status: 'DRAFT',
     })
@@ -136,9 +179,19 @@ publicationsRouter.put('/:id', async (req, res) => {
   const parsed = PublicationSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
+  // Admin and Researchers reviewing don't reset to DRAFT
+  const updatePayload = { ...parsed.data };
+  if (req.user.role !== 'admin') {
+    // If it's a researcher editing something NOT pending their review, reset it
+    const isReviewing = req.user.role === 'researcher' && pub.approval_status === 'PENDING_RESEARCHER';
+    if (!isReviewing) {
+      updatePayload.approval_status = 'DRAFT';
+    }
+  }
+
   const { data, error } = await supabase
     .from('publication')
-    .update({ ...parsed.data, approval_status: 'DRAFT' })
+    .update(updatePayload)
     .eq('id', req.params.id)
     .select()
     .single();
@@ -152,6 +205,11 @@ publicationsRouter.put('/:id', async (req, res) => {
 publicationsRouter.delete('/:id', async (req, res) => {
   const pub = await ownOrFail(req.params.id, req.user.sub, req.user.role, res);
   if (!pub) return;
+
+  // Restriction: Only DRAFT content can be deleted by authors.
+  if (req.user.role !== 'admin' && pub.approval_status !== 'DRAFT') {
+    return res.status(403).json({ error: `Cannot delete content in ${pub.approval_status} state` });
+  }
 
   const { error } = await supabase.from('publication').delete().eq('id', req.params.id);
   if (error) return res.status(500).json({ error: error.message });

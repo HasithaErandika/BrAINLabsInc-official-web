@@ -20,6 +20,23 @@ import { z } from 'zod';
 import { supabase } from '../config/supabase.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireRole } from '../middleware/requireRole.js';
+import { 
+  BlogSchema, 
+  TutorialSchema, 
+  ProjectSchema, 
+  PublicationSchema, 
+  EventSchema, 
+  GrantSchema 
+} from '../schemas/content.js';
+
+const SCHEMAS = {
+  blog:        BlogSchema,
+  tutorial:    TutorialSchema,
+  project:     ProjectSchema,
+  publication: PublicationSchema,
+  event:       EventSchema,
+  grant_info:  GrantSchema,
+};
 
 export const contentRouter = Router();
 contentRouter.use(requireAuth);
@@ -47,15 +64,34 @@ const CREATOR_COL = {
 // Items in PENDING_RESEARCHER state — for the researcher's review queue
 
 contentRouter.get('/researcher/reviews', requireRole('researcher', 'admin'), async (req, res) => {
+  const { sub: memberId, role } = req.user;
   const results = {};
+
+  // Fetch assistants assigned to this researcher
+  const { data: assistants } = await supabase
+    .from('research_assistant')
+    .select('member_id')
+    .eq('assigned_by_researcher_id', memberId);
+  
+  const assistantIds = (assistants ?? []).map(a => a.member_id);
+
+  if (assistantIds.length === 0 && role !== 'admin') {
+    return res.json({ blog: [], tutorial: [], project: [], publication: [] });
+  }
 
   await Promise.all(
     REVIEWABLE_TABLES.map(async (table) => {
-      const { data } = await supabase
+      let query = supabase
         .from(table)
         .select('*')
         .eq('approval_status', 'PENDING_RESEARCHER')
         .order('created_at', { ascending: false });
+      
+      if (role !== 'admin') {
+        query = query.in('created_by_member_id', assistantIds);
+      }
+
+      const { data } = await query;
       results[table] = data ?? [];
     })
   );
@@ -103,6 +139,18 @@ contentRouter.patch('/:table/:id/submit', async (req, res) => {
   }
   if (existing.approval_status !== 'DRAFT') {
     return res.status(409).json({ error: `Can only submit DRAFT content (current: ${existing.approval_status})` });
+  }
+
+  // --- STRICT VALIDATION ON SUBMIT ---
+  const schema = SCHEMAS[table];
+  if (schema) {
+    // Fetch full data for validation
+    const { data: fullData } = await supabase.from(table).select('*').eq('id', id).single();
+    const parsed = schema.safeParse(fullData);
+    if (!parsed.success) {
+      const errorMessages = parsed.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      return res.status(400).json({ error: `Validation failed for submission: ${errorMessages}` });
+    }
   }
 
   const { data, error } = await supabase
