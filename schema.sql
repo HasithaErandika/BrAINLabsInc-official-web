@@ -77,6 +77,19 @@ CREATE TABLE research_assistant (
         FOREIGN KEY (approved_by_admin_id)      REFERENCES admin(member_id)         ON DELETE SET NULL
 );
 
+-- FIX (assignment): Link an RA to a specific ongoing research project.
+CREATE TABLE research_assistant_ongoing_research (
+    ra_member_id    INT NOT NULL,
+    research_id     INT NOT NULL,
+
+    PRIMARY KEY (ra_member_id, research_id),
+
+    CONSTRAINT fk_ra_research_assistant
+        FOREIGN KEY (ra_member_id) REFERENCES research_assistant(member_id) ON DELETE CASCADE,
+    CONSTRAINT fk_ra_ongoing_research
+        FOREIGN KEY (research_id)  REFERENCES ongoing_research(id)         ON DELETE CASCADE
+);
+
 -- Former Member archives resigned Researchers and RAs.
 -- The original researcher / research_assistant row is deleted on resignation;
 -- the member row is preserved for blog authorship FKs.
