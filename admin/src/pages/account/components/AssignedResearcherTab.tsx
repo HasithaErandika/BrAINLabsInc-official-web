@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { Info, Mail, Briefcase, Loader2, FlaskConical, Quote } from "lucide-react";
 import { api } from "../../../api";
 
-interface Props {}
-
 interface Supervisor {
   id: number;
   first_name: string;
@@ -16,7 +14,7 @@ interface Supervisor {
   assigned_projects?: { id: number; title: string }[];
 }
 
-export function AssignedResearcherTab({}: Props) {
+export function AssignedResearcherTab() {
   const [supervisor, setSupervisor] = useState<Supervisor | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -55,14 +53,14 @@ export function AssignedResearcherTab({}: Props) {
         <p className="text-sm text-zinc-500 mb-8">
           The principal investigator or researcher you are assigned to.
         </p>
-        
+
         {supervisor ? (
           <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-start gap-6 p-6 bg-white border border-zinc-200 rounded-2xl shadow-sm">
               <div className="w-20 h-20 bg-zinc-900 text-white rounded-2xl flex items-center justify-center text-2xl font-bold shrink-0 shadow-lg">
                 {supervisor.first_name[0]}{supervisor.second_name[0]}
               </div>
-              
+
               <div className="flex-1 space-y-4">
                 <div>
                   <h3 className="text-xl font-bold text-zinc-900">{supervisor.first_name} {supervisor.second_name}</h3>
@@ -109,7 +107,7 @@ export function AssignedResearcherTab({}: Props) {
             <div>
               <p className="text-sm font-bold text-zinc-900">Not Assigned</p>
               <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-                You are not currently assigned to any specific researcher. 
+                You are not currently assigned to any specific researcher.
                 Please contact an administrator if you believe this is an error.
               </p>
             </div>

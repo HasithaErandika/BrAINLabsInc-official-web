@@ -9,7 +9,10 @@ const TIMEOUT_MS = 30 * 60 * 1_000; // 30 minutes of inactivity
  */
 export function useSessionTimeout(onTimeout: () => void) {
   const callbackRef = useRef(onTimeout);
-  callbackRef.current = onTimeout;
+  
+  useEffect(() => {
+    callbackRef.current = onTimeout;
+  }, [onTimeout]);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
