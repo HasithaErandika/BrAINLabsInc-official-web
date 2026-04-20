@@ -26,8 +26,8 @@ BrAINLabsInc/
 ├── admin/          # Admin Console (React + Vite)
 ├── backend/        # Express.js API & Database Seeds
 ├── docs/           # System Documentation
-├── web/            # Legacy Landing Page (Cloudflare)
-├── schema(2).sql   # Canonical Database Schema
+├── web/            # Public Content Portal (React + Vite)
+├── schema.sql      # Canonical Database Schema
 └── README.md       # High-level project entry point
 ```
 
@@ -46,12 +46,25 @@ cp .env.example .env
 npm install
 npm run dev
 ```
-Initialize the database using `schema(2).sql` in the Supabase SQL editor and run the admin seeder:
+Initialize the database using `schema.sql` in the Supabase SQL editor and run the seeders:
 ```bash
-node seed-admin.js
+
+# 1. Seed Team Members (Creates Auth Users & Member profiles)
+node data_seed/execute-team-seed.js
+
+# 2. Seed Legacy Content (Blogs, Projects, Publications, etc.)
+node data_seed/execute-seed.js
 ```
 
-### 3. Admin Console Setup
+### 3. Web Portal Setup
+Navigate to the `web/` directory:
+```bash
+cp .env.example .env
+npm install
+npm run dev
+```
+
+### 4. Admin Console Setup
 Navigate to the `admin/` directory:
 ```bash
 cp .env.example .env

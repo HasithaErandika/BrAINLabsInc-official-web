@@ -1,19 +1,20 @@
+import { useEffect, useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
-import { blogPosts } from '@/data/blog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, ArrowRight, BookOpen } from 'lucide-react';
+import { Calendar, ArrowRight, BookOpen, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/shared/SEO';
 import { Badge } from '@/components/ui/badge';
+import { api, type PublicBlog } from '@/lib/api';
+
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=640&q=80';
 
 const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
         opacity: 1,
-        transition: {
-            staggerChildren: 0.1,
-        },
+        transition: { staggerChildren: 0.1 },
     },
 };
 
@@ -23,6 +24,19 @@ const itemVariants: Variants = {
 };
 
 export const Blog = () => {
+    const [posts, setPosts] = useState<PublicBlog[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        api.blogs.list()
+            .then(setPosts)
+            .catch((e) => setError(e.message))
+            .finally(() => setLoading(false));
+    }, []);
+
+
+
     return (
         <div className="min-h-screen">
             <SEO
@@ -64,67 +78,98 @@ export const Blog = () => {
             {/* ── Blog Cards ───────────────────────────────────────── */}
             <section className="py-8 md:py-12">
                 <div className="container mx-auto px-4 lg:pl-8">
-                    <motion.div
-                        variants={containerVariants}
-                        initial="hidden"
-                        animate="visible"
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl"
-                    >
-                        {blogPosts.map((post) => (
-                            <motion.div key={post.id} variants={itemVariants}>
-                                <Card className="h-full flex flex-col transition-all duration-300 border-border/50 hover:border-primary/30 hover:shadow-xl group bg-card/80 overflow-hidden">
-                                    {/* Card Image */}
-                                    <div className="aspect-[16/9] overflow-hidden relative">
-                                        <img
-                                            src={post.image}
-                                            alt={post.title}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </div>
 
-                                    <CardContent className="p-6 flex flex-col flex-1 gap-4">
-                                        <div className="flex flex-wrap gap-2">
-                                            {post.tags.slice(0, 2).map((tag) => (
-                                                <Badge key={tag} variant="secondary" className="bg-primary/5 text-primary border-primary/10 text-[10px] uppercase tracking-wider px-2 py-0">
-                                                    {tag}
-                                                </Badge>
-                                            ))}
-                                        </div>
+                    {loading && (
+                        <div className="flex items-center gap-3 text-muted-foreground py-20 justify-center">
+                            <Loader2 size={20} className="animate-spin text-primary" />
+                            <span className="text-sm">Loading articles…</span>
+                        </div>
+                    )}
 
-                                        <div className="flex-1 space-y-3">
-                                            <h3 className="text-xl font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                                                {post.title}
-                                            </h3>
-                                            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
-                                                {post.excerpt}
-                                            </p>
-                                        </div>
+                    {error && (
+                        <div className="text-center py-20">
+                            <p className="text-destructive text-sm">{error}</p>
+                        </div>
+                    )}
 
-                                        <div className="pt-4 border-t border-border/40 flex items-center justify-between">
-                                            <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Calendar size={12} className="text-primary/60" />
-                                                    {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                </div>
+                    {!loading && !error && posts.length === 0 && (
+                        <div className="text-center py-20">
+                            <BookOpen size={40} className="mx-auto text-muted-foreground/30 mb-4" />
+                            <p className="text-muted-foreground text-sm">No blog posts available yet.</p>
+                        </div>
+                    )}
+
+                    {!loading && !error && posts.length > 0 && (
+                        <motion.div
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="visible"
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl"
+                        >
+                            {posts.map((post) => {
+                                const imageUrl = post.blog_image[0]?.image_url || FALLBACK_IMAGE;
+                                const tags = post.blog_keyword.map(k => k.keyword);
+                                return (
+                                    <motion.div key={post.id} variants={itemVariants}>
+                                        <Card className="h-full flex flex-col transition-all duration-300 border-border/50 hover:border-primary/30 hover:shadow-xl group bg-card/80 overflow-hidden">
+                                            {/* Card Image */}
+                                            <div className="aspect-[16/9] overflow-hidden relative bg-muted">
+                                                <img
+                                                    src={imageUrl}
+                                                    alt={post.title}
+                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                    onError={(e) => {
+                                                        const img = e.target as HTMLImageElement;
+                                                        img.src = FALLBACK_IMAGE;
+                                                    }}
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                             </div>
 
-                                            <Link to={`/blog/${post.id}`}>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="group/btn text-primary hover:text-primary hover:bg-primary/8 rounded-full h-8 px-4 font-semibold text-xs transition-all"
-                                                >
-                                                    Read More
-                                                    <ArrowRight className="ml-1.5 group-hover/btn:translate-x-1 transition-transform" size={14} />
-                                                </Button>
-                                            </Link>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </motion.div>
+                                            <CardContent className="p-6 flex flex-col flex-1 gap-4">
+                                                <div className="flex flex-wrap gap-2">
+                                                    {tags.slice(0, 2).map((tag) => (
+                                                        <Badge key={tag} variant="secondary" className="bg-primary/5 text-primary border-primary/10 text-[10px] uppercase tracking-wider px-2 py-0">
+                                                            {tag}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+
+                                                <div className="flex-1 space-y-3">
+                                                    <h3 className="text-xl font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                                                        {post.title}
+                                                    </h3>
+                                                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                                                        {post.description || 'Read more to explore this research perspective.'}
+                                                    </p>
+                                                </div>
+
+                                                <div className="pt-4 border-t border-border/40 flex items-center justify-between">
+                                                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Calendar size={12} className="text-primary/60" />
+                                                            {new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                        </div>
+                                                    </div>
+
+                                                    <Link to={`/blog/${post.id}`}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="group/btn text-primary hover:text-primary hover:bg-primary/8 rounded-full h-8 px-4 font-semibold text-xs transition-all"
+                                                        >
+                                                            Read More
+                                                            <ArrowRight className="ml-1.5 group-hover/btn:translate-x-1 transition-transform" size={14} />
+                                                        </Button>
+                                                    </Link>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
+                                );
+                            })}
+                        </motion.div>
+                    )}
                 </div>
             </section>
         </div>

@@ -1,13 +1,14 @@
+import { useEffect, useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { intro } from '@/data/general';
-import { grants } from '@/data/grants';
-import { ArrowRight, Brain, Sparkles, Award, BookOpen, Users } from 'lucide-react';
+import { ArrowRight, Brain, Sparkles, Award, BookOpen, Users, Loader2 } from 'lucide-react';
 import { NeuralBrainIcon } from '@/components/ui/PageIcons';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BrainNetwork } from '@/components/ui/BrainNetwork';
 import { SEO } from '@/components/shared/SEO';
+import { api, type PublicGrant, type PublicStats } from '@/lib/api';
 
 const containerVariants: Variants = {
     hidden: {},
@@ -20,6 +21,19 @@ const itemVariants: Variants = {
 };
 
 export const Home = () => {
+    const [stats, setStats] = useState<PublicStats | null>(null);
+    const [grants, setGrants] = useState<PublicGrant[]>([]);
+    const [loadingGrants, setLoadingGrants] = useState(true);
+
+    useEffect(() => {
+        api.stats.get().then(setStats).catch(console.error);
+        
+        api.grants.list()
+            .then(setGrants)
+            .catch(console.error)
+            .finally(() => setLoadingGrants(false));
+    }, []);
+
     return (
         <div className="relative">
             <SEO />
@@ -71,17 +85,22 @@ export const Home = () => {
                             </motion.div>
 
                             {/* Quick stats row */}
-                            <motion.div variants={itemVariants} className="flex flex-wrap gap-6 pt-4 border-t border-border/40">
-                                {[
-                                    { value: '8', label: 'Researchers' },
-                                    { value: '7', label: 'Active Projects' },
-                                    { value: '3+', label: 'Publications' },
+                            <motion.div variants={itemVariants} className="flex flex-wrap gap-6 pt-4 border-t border-border/40 min-h-[60px]">
+                                {stats ? [
+                                    { value: stats.researchers, label: 'Researchers' },
+                                    { value: stats.projects, label: 'Active Projects' },
+                                    { value: stats.publications, label: 'Publications' },
                                 ].map((s, i) => (
                                     <div key={i} className="flex items-baseline gap-2">
                                         <span className="text-2xl font-bold text-foreground">{s.value}</span>
                                         <span className="text-xs text-muted-foreground uppercase tracking-wide">{s.label}</span>
                                     </div>
-                                ))}
+                                )) : (
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <Loader2 size={16} className="animate-spin" />
+                                        <span className="text-sm">Loading stats...</span>
+                                    </div>
+                                )}
                             </motion.div>
                         </motion.div>
 
@@ -127,9 +146,9 @@ export const Home = () => {
                 <div className="container mx-auto px-4">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
                         {[
-                            { value: '8', label: 'Researchers', icon: Users, description: 'Multidisciplinary experts' },
-                            { value: '7', label: 'Active Projects', icon: Sparkles, description: 'Ongoing research' },
-                            { value: '3+', label: 'Publications', icon: BookOpen, description: 'Peer-reviewed papers' },
+                            { value: stats ? String(stats.researchers) : '-', label: 'Researchers', icon: Users, description: 'Multidisciplinary experts' },
+                            { value: stats ? String(stats.projects) : '-', label: 'Active Projects', icon: Sparkles, description: 'Ongoing research' },
+                            { value: stats ? String(stats.publications) : '-', label: 'Publications', icon: BookOpen, description: 'Peer-reviewed papers' },
                             { value: '2+', label: 'Research Areas', icon: Brain, description: 'LLMs & Neuromorphic' },
                         ].map((stat, idx) => (
                             <motion.div
@@ -180,36 +199,54 @@ export const Home = () => {
                         </p>
                     </motion.div>
 
-                    <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                        {grants.map((grant, idx) => (
-                            <motion.div
-                                key={grant.id}
-                                initial={{ opacity: 0, y: 24 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: idx * 0.12, duration: 0.5 }}
-                                whileHover={{ y: -3 }}
-                            >
-                                <Card className="h-full border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300 group bg-card/80">
-                                    <CardHeader>
-                                        <div className="flex justify-between items-start gap-4">
-                                            <CardTitle className="text-xl leading-snug group-hover:text-primary transition-colors duration-300">{grant.title}</CardTitle>
-                                            <span className="text-xs font-mono bg-primary/8 text-primary px-2.5 py-1 rounded-full border border-primary/20 whitespace-nowrap shrink-0">
-                                                {grant.year}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-2 pt-1">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                            <span className="text-sm font-semibold text-primary">{grant.agency}</span>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-sm text-muted-foreground leading-relaxed">{grant.description}</p>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </div>
+                    {loadingGrants ? (
+                        <div className="flex justify-center py-10">
+                            <Loader2 size={24} className="animate-spin text-primary" />
+                        </div>
+                    ) : grants.length === 0 ? (
+                        <div className="text-center py-10 text-muted-foreground">
+                            No grants publicly available yet.
+                        </div>
+                    ) : (
+                        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                            {grants.map((grant, idx) => (
+                                <motion.div
+                                    key={grant.id}
+                                    initial={{ opacity: 0, y: 24 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: idx * 0.12, duration: 0.5 }}
+                                    whileHover={{ y: -3 }}
+                                >
+                                    <Card className="h-full border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300 group bg-card/80">
+                                        <CardHeader>
+                                            <div className="flex justify-between items-start gap-4">
+                                                <CardTitle className="text-xl leading-snug group-hover:text-primary transition-colors duration-300">{grant.title}</CardTitle>
+                                                {grant.passed_date && (
+                                                    <span className="text-xs font-mono bg-primary/8 text-primary px-2.5 py-1 rounded-full border border-primary/20 whitespace-nowrap shrink-0">
+                                                        {new Date(grant.passed_date).getFullYear()}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {grant.member && (
+                                                <div className="flex items-center gap-2 pt-1">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                                    <span className="text-sm font-semibold text-primary">
+                                                        {grant.member.first_name} {grant.member.second_name}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                                {grant.description || 'No description provided.'}
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </section>
 

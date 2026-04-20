@@ -1,13 +1,4 @@
-export interface Publication {
-    title: string;
-    authors: string;
-    venue: string;
-    year: number;
-    doi?: string;
-    link: string;
-}
-
-export const publications: Publication[] = [
+export const publications = [
     {
         title: "Mental Stress Recognition on the Fly Using SNNs",
         authors: "M. Weerasinghe, G. Y. Wang, J. Whalley, M. Crook-Ramsey",

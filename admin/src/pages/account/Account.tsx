@@ -144,7 +144,7 @@ export default function Account() {
           {activeTab === "basic" && <BasicInfoTab cv={profile} onUpdate={fetchProfile} isEditing={isEditing} />}
           {activeTab === "research" && <OngoingResearchTab cv={profile} onUpdate={fetchProfile} isEditing={isEditing} />}
           {activeTab === "qualifications" && <QualificationsTab cv={profile} onUpdate={fetchProfile} isEditing={isEditing} />}
-          {activeTab === "assigned_researcher" && <AssignedResearcherTab cv={profile} />}
+          {activeTab === "assigned_researcher" && <AssignedResearcherTab />}
           {activeTab === "assistants" && <ResearchAssistantsTab cv={profile} />}
         </div>
       </div>

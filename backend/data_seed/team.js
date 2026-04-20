@@ -1,57 +1,4 @@
-export interface AcademicQualification {
-    degree: string;
-    institution: string;
-    period: string;
-    details?: string;
-}
-
-export interface CareerExperience {
-    role: string;
-    institution: string;
-    period: string;
-    details?: string[];
-}
-
-export interface Publication {
-    title: string;
-    authors: string;
-    venue: string;
-    year: string;
-    doi?: string;
-    details?: string;
-    type: 'journal' | 'conference' | 'book' | 'presentation' | 'under_review';
-}
-
-export interface TeamMember {
-    id: string; // Slug for routing
-    name: string;
-    position: string;
-    university: string;
-    country: string;
-    researchInterests: {
-        theoretical?: string[];
-        applied?: string[];
-    };
-    contact: string;
-    linkedin?: string;
-    website?: string;
-    image?: string;
-    status: 'current' | 'past';
-    bio?: string;
-    summary?: string;
-    academicQualifications?: AcademicQualification[];
-    careerSummary?: {
-        academic?: CareerExperience[];
-        industry?: CareerExperience[];
-        volunteer?: CareerExperience[];
-    };
-    honoursAndAwards?: string[];
-    memberships?: string[];
-    ongoingResearch?: string[];
-    publications?: Publication[];
-}
-
-export const team: TeamMember[] = [
+export const team = [
     {
         id: "mahima-weerasinghe",
         name: "Dr. Mahima Weerasinghe",
@@ -442,9 +389,9 @@ export const team: TeamMember[] = [
         position: "Academic Instructor / MPhil Student",
         university: "Sri Lanka Institute of Information Technology",
         country: "Sri Lanka",
-        researchInterests: { 
-            theoretical: ["Computer Vision", "Graph Neural Networks"], 
-            applied: ["Image Processing", "Biomedical Engineering", "Brain-Inspired NN"] 
+        researchInterests: {
+            theoretical: ["Computer Vision", "Graph Neural Networks"],
+            applied: ["Image Processing", "Biomedical Engineering", "Brain-Inspired NN"]
         },
         contact: "sanka.m@sliit.lk",
         linkedin: "https://www.linkedin.com/in/sankamohottala/",
@@ -514,9 +461,9 @@ export const team: TeamMember[] = [
         position: "Research Assistant",
         university: "Sri Lanka Institute of Information Technology",
         country: "Sri Lanka",
-        researchInterests: { 
-            theoretical: ["Machine Learning", "Neuroinformatics"], 
-            applied: ["Artificial Intelligence", "EEG-based Mindfulness", "Explainable AI"] 
+        researchInterests: {
+            theoretical: ["Machine Learning", "Neuroinformatics"],
+            applied: ["Artificial Intelligence", "EEG-based Mindfulness", "Explainable AI"]
         },
         contact: "it24102080@my.sliit.lk",
         linkedin: "https://www.linkedin.com/in/nandun-samarasekara-5564162b8/",
@@ -527,7 +474,7 @@ export const team: TeamMember[] = [
                 degree: "BSc in Information Technology, Specializing in Data Science",
                 institution: "SLIIT",
                 period: "Jul 2024 – Jul 2028 (Expected)"
-            },    
+            },
         ],
         careerSummary: {
             academic: [
@@ -544,87 +491,87 @@ export const team: TeamMember[] = [
         ]
     },
     {
-    id: "hasitha-erandika",
-    name: "Mr. Hasitha Erandika",
-    position: "Research Assistant",
-    university: "Sri Lanka Institute of Information Technology",
-    country: "Sri Lanka",
-    researchInterests: {
-        theoretical: ["Machine Learning", "Bio-Inspired Computing"],
-        applied: ["EEG-Based Cognitive Analysis", "AI for Human Wellbeing", "Autonomous Systems"]
-    },
-    contact: "wickramasinghe.erandika@gmail.com",
-    linkedin: "https://www.linkedin.com/in/hasitha-erandika/",
-    image: "/assets/images/hasitha-erandika.jpeg",
-    status: "current",
-    summary: "Hasitha Erandika is an undergraduate Research Assistant at BrAIN Labs, SLIIT, specializing in EEG signal analysis, mindfulness research, and AI-assisted brain data interpretation. He is currently contributing to ongoing research in EEG-based mindfulness and cognitive load analysis using machine learning and bio-inspired computing approaches.",
-    academicQualifications: [
-        {
-            degree: "Bachelor of Science Honours in Information Technology (Artificial Intelligence)",
-            institution: "Sri Lanka Institute of Information Technology, Sri Lanka",
-            period: "2024 – 2028 (Expected)",
-            details: "Specialization in Artificial Intelligence — Active undergraduate researcher from 2nd year"
-        }
-    ],
-    careerSummary: {
-        academic: [
+        id: "hasitha-erandika",
+        name: "Mr. Hasitha Erandika",
+        position: "Research Assistant",
+        university: "Sri Lanka Institute of Information Technology",
+        country: "Sri Lanka",
+        researchInterests: {
+            theoretical: ["Machine Learning", "Bio-Inspired Computing"],
+            applied: ["EEG-Based Cognitive Analysis", "AI for Human Wellbeing", "Autonomous Systems"]
+        },
+        contact: "wickramasinghe.erandika@gmail.com",
+        linkedin: "https://www.linkedin.com/in/hasitha-erandika/",
+        image: "/assets/images/hasitha-erandika.jpeg",
+        status: "current",
+        summary: "Hasitha Erandika is an undergraduate Research Assistant at BrAIN Labs, SLIIT, specializing in EEG signal analysis, mindfulness research, and AI-assisted brain data interpretation. He is currently contributing to ongoing research in EEG-based mindfulness and cognitive load analysis using machine learning and bio-inspired computing approaches.",
+        academicQualifications: [
             {
-                role: "Research Assistant",
-                institution: "BrAIN Labs Inc. & SLIIT Research, Sri Lanka",
-                period: "2025 – Present",
-                details: [
-                    "Active contributor to ongoing EEG + mindfulness + AI research",
-                    "AI-assisted EEG signal interpretation and human wellbeing analytics"
-                ]
+                degree: "Bachelor of Science Honours in Information Technology (Artificial Intelligence)",
+                institution: "Sri Lanka Institute of Information Technology, Sri Lanka",
+                period: "2024 – 2028 (Expected)",
+                details: "Specialization in Artificial Intelligence — Active undergraduate researcher from 2nd year"
             }
         ],
-        industry: [
-            {
-                role: "IT & Web solution Associate (Part-Time)",
-                institution: "A2Z Engineering (Pvt) Ltd, Sri Lanka",
-                period: "2024 – Dec 2025",
-                details: [
-                    "Practical software and systems development",
-                    "Solar electrical system design and implementation"
-                ]
-            }
+        careerSummary: {
+            academic: [
+                {
+                    role: "Research Assistant",
+                    institution: "BrAIN Labs Inc. & SLIIT Research, Sri Lanka",
+                    period: "2025 – Present",
+                    details: [
+                        "Active contributor to ongoing EEG + mindfulness + AI research",
+                        "AI-assisted EEG signal interpretation and human wellbeing analytics"
+                    ]
+                }
+            ],
+            industry: [
+                {
+                    role: "IT & Web solution Associate (Part-Time)",
+                    institution: "A2Z Engineering (Pvt) Ltd, Sri Lanka",
+                    period: "2024 – Dec 2025",
+                    details: [
+                        "Practical software and systems development",
+                        "Solar electrical system design and implementation"
+                    ]
+                }
+            ],
+        },
+        ongoingResearch: [
+            "EEG-Based Mindfulness and Cognitive Load Analysis using AI — BrAIN Labs Inc. & SLIIT Research (Ongoing)"
         ],
+        publications: []
     },
-    ongoingResearch: [
-        "EEG-Based Mindfulness and Cognitive Load Analysis using AI — BrAIN Labs Inc. & SLIIT Research (Ongoing)"
-    ],
-    publications: []
-},
     {
-    "id": "savini-kommalage",
-    "name": "Ms. Savini Kommalage",
-    "position": "Research Assistant",
-    "university": "Sri Lanka Institute of Information Technology",
-    "country": "Sri Lanka",
-    "researchInterests": {
-        "theoretical": [
-            "Curriculum Learning",
-            "Reinforcement Learning",
-            "Explainable Artificial Intelligence"
-        ],
-        "applied": [
-            "Human Behaviour Understanding Frameworks",
-            "Efficient AI",
-            "Edge AI"
-        ]
+        "id": "savini-kommalage",
+        "name": "Ms. Savini Kommalage",
+        "position": "Research Assistant",
+        "university": "Sri Lanka Institute of Information Technology",
+        "country": "Sri Lanka",
+        "researchInterests": {
+            "theoretical": [
+                "Curriculum Learning",
+                "Reinforcement Learning",
+                "Explainable Artificial Intelligence"
+            ],
+            "applied": [
+                "Human Behaviour Understanding Frameworks",
+                "Efficient AI",
+                "Edge AI"
+            ]
+        },
+        "contact": "it24100641@my.sliit.lk",
+        "linkedin": "www.linkedin.com/in/savini-kommalage",
+        "image": "/assets/images/savini-kommalage.jpeg",
+        "status": "current",
     },
-    "contact": "it24100641@my.sliit.lk",
-    "linkedin": "www.linkedin.com/in/savini-kommalage",
-    "image": "/assets/images/savini-kommalage.jpeg",
-    "status": "current",
-},
     {
         id: "krishmal-dinidu",
         name: "Mr. Krishmal Dinidu",
         position: "Research Assistant",
         university: "Sri Lanka Institute of Information Technology",
         country: "Sri Lanka",
-        researchInterests: { theoretical: ["Machine Learning","Neuro Science"], applied: ["Artificial Intelligence"] },
+        researchInterests: { theoretical: ["Machine Learning", "Neuro Science"], applied: ["Artificial Intelligence"] },
         contact: "krishmaldinidu5466@gmail.com",
         linkedin: "https://www.linkedin.com/in/krishmal-dinindu-a933b4349/",
         image: "/assets/images/krishmal-dinindu.jpeg",
@@ -654,7 +601,7 @@ export const team: TeamMember[] = [
             "Working on Spiking Neural Network Research"
         ],
         publications: []
-},
+    },
     {
         id: "hasitha-hirushan",
         name: "Mr. Hasitha Hirushan",

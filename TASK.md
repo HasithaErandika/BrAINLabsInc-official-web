@@ -123,10 +123,48 @@
 
 ## Phase 3 — Public Website (`web/`)
 
-- [ ] Connect to Express `/public/*` read-only endpoints
-- [ ] Matching monochrome design
-- [ ] SEO: sitemap, metadata, semantic HTML
-- [ ] End-to-end smoke test: RA draft → public visibility
+### Architecture
+- [x] `web/` is a **public-only read-only** site — no auth, no login/signup
+- [x] `admin/` is the **management portal** — protected behind JWT auth
+- [x] `web/` runs on port **5174**, `admin/` on **5173**, `backend/` on **3001**
+- [x] `web/vite.config.ts` — proxy `/public/*` to backend (avoids CORS in dev)
+- [x] `web/.env` created with `VITE_API_URL=http://localhost:3001`
+
+### Auth Cleanup (web/)
+- [x] Deleted `Login.tsx`, `SignUp.tsx` — auth only belongs in `admin/`
+- [x] Deleted `AdminDashboard.tsx`, `ResearcherDashboard.tsx`, `ResearchAssistantDashboard.tsx`
+- [x] Deleted `AuthContext.tsx` — web has no user session
+- [x] `App.tsx` — removed auth routes, `AuthProvider` wrapper, dashboard routes
+- [x] `Navbar.tsx` — removed login/logout/dashboard buttons; pure public nav
+
+### Static Data → Live API (web/)
+- [x] Deleted `data/blog.ts`, `data/events.ts`, `data/projects.ts`, `data/publications.ts`
+- [x] Rewrote `lib/api.ts` — public-only `fetch`-based client (no axios, no tokens)
+- [x] `Publications.tsx` — fetches `/public/publications`, groups by year, shows subtype info
+- [x] `Projects.tsx` — fetches `/public/projects`, grid layout, shows diagram image
+- [x] `Blog.tsx` — fetches `/public/blogs`, uses `blog_image` + `blog_keyword` from API
+- [x] `BlogPost.tsx` — fetches `/public/blogs/:id`, calculates read time from word count
+- [x] `Events.tsx` — fetches `/public/events`, splits upcoming/past by `event_date` vs today
+- [x] `Team.tsx` — fetches `/public/researchers`, links to `/team/:slug`
+- [x] `TeamMemberProfile.tsx` — fetches `/public/researchers/:slug` (was fake 800ms timer)
+
+### Bugs Fixed
+- [x] **backend**: `/public/tutorials` list missing `title` field — added to select query
+- [x] **admin**: `api/index.ts` defaulted to `http://localhost:5173` (Vite's own port) → fixed to `3001`
+- [x] **web**: `lib/api.ts` wrong default port `3000` → now points to backend correctly via proxy
+- [x] **backend/web**: Fixed DB schema mismatch `event_date`/`time` → `event_datetime` across endpoints and UI components
+- [x] **admin**: Fixed invalid `cv={profile}` prop in `Account.tsx` causing TypeScript errors
+
+### Seeding & DB Initialization
+- [x] Generated `backend/data_seed/execute-team-seed.js` to create Supabase Auth users for all Team members
+- [x] Mapped team members automatically to `member` and `researcher` profiles based on roles
+- [x] Seeded relational schema data (`educational_background` and `ongoing_research`) for all researchers
+- [x] Directly seeded all legacy static content (Blogs, Events, Grants, Projects, Publications) via `backend/data_seed/execute-seed.js`
+
+### TODO
+- [ ] `web/` SEO: add sitemap.xml, robots.txt
+- [x] `web/Home.tsx` — replace hardcoded stats with live counts from API
+- [ ] End-to-end smoke test: RA draft → researcher approval → admin approval → visible on web
 
 ---
 

@@ -1,12 +1,4 @@
-export interface Event {
-    title: string;
-    type: string;
-    date: string;
-    description: string;
-    link?: string;
-}
-
-export const pastEvents: Event[] = [
+export const pastEvents = [
     {
         title: "TinyML: A Compact Revolution in Engineering AI",
         type: "Pre-Conference Workshop",
@@ -22,9 +14,7 @@ export const pastEvents: Event[] = [
         link: "https://tinyml-in-action.github.io"
     }
 ];
-
-export const upcomingEvents: Event[] = [];
-
+export const upcomingEvents = [];
 export const eventResources = {
     title: "TinyML Workshops",
     description: "Find recordings, materials, and workshop details at:",

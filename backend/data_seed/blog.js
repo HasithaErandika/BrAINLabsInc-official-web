@@ -1,15 +1,4 @@
-export interface BlogPost {
-    id: string;
-    title: string;
-    excerpt: string;
-    content: string;
-    author: string;
-    date: string;
-    image: string;
-    tags: string[];
-}
-
-export const blogPosts: BlogPost[] = [
+export const blogPosts = [
     {
         id: 'neurons-meet-networks',
         title: 'Where Neurons Meet Networks: Current Frontiers at the Intersection of Brain Science and Artificial Intelligence',

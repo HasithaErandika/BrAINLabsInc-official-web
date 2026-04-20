@@ -104,7 +104,7 @@ publicRouter.get('/tutorials', async (_req, res) => {
   const { data, error } = await supabase
     .from('tutorial')
     .select(`
-      id, description, created_at, updated_at,
+      id, title, description, created_at, updated_at,
       member:created_by_member_id ( id, first_name, second_name, slug ),
       tutorial_image ( image_url )
     `)
@@ -154,7 +154,7 @@ publicRouter.get('/events/:id', async (req, res) => {
   const { data, error } = await supabase
     .from('event')
     .select(`
-      id, title, description, event_date, event_time, premises, host, created_at,
+      id, title, description, event_datetime, premises, host, created_at,
       researcher:created_by_researcher ( member_id, member ( first_name, second_name, slug ) ),
       event_image ( id, image_url )
     `)
@@ -170,12 +170,12 @@ publicRouter.get('/events', async (_req, res) => {
   const { data, error } = await supabase
     .from('event')
     .select(`
-      id, title, description, event_date, event_time, premises, host, created_at,
+      id, title, description, event_datetime, premises, host, created_at,
       researcher:created_by_researcher ( member_id, member ( first_name, second_name, slug ) ),
       event_image ( image_url )
     `)
     .eq('approval_status', 'APPROVED')
-    .order('event_date', { ascending: true });
+    .order('event_datetime', { ascending: true });
 
   if (error) return res.status(500).json({ error: error.message });
   res.json(data ?? []);
@@ -219,3 +219,38 @@ publicRouter.get('/publications', async (_req, res) => {
   if (error) return res.status(500).json({ error: error.message });
   res.json(data ?? []);
 });
+
+// ─── GET /public/grants ───────────────────────────────────────────────────────
+
+publicRouter.get('/grants', async (_req, res) => {
+  const { data, error } = await supabase
+    .from('grant_info')
+    .select(`
+      id, title, description, passed_date, expire_date,
+      member:created_by_researcher ( id, first_name, second_name, slug ),
+      grant_document ( id, doc_url, doc_label )
+    `)
+    .eq('approval_status', 'APPROVED')
+    .order('passed_date', { ascending: false });
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data ?? []);
+});
+
+// ─── GET /public/stats ────────────────────────────────────────────────────────
+
+publicRouter.get('/stats', async (_req, res) => {
+  // Execute three count queries simultaneously
+  const [researchers, projects, publications] = await Promise.all([
+    supabase.from('researcher').select('*', { count: 'exact', head: true }).eq('approval_status', 'APPROVED'),
+    supabase.from('project').select('*', { count: 'exact', head: true }).eq('approval_status', 'APPROVED'),
+    supabase.from('publication').select('*', { count: 'exact', head: true }).eq('approval_status', 'APPROVED'),
+  ]);
+
+  res.json({
+    researchers: researchers.count ?? 0,
+    projects: projects.count ?? 0,
+    publications: publications.count ?? 0,
+  });
+});
+
