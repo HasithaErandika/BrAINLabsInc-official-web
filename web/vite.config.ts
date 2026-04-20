@@ -10,6 +10,13 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    port: 5174,
+    proxy: {
+      // Proxy all /public/* requests to the backend — avoids CORS in dev
+      '/public': 'http://localhost:3001',
+    },
+  },
   build: {
     sourcemap: false,
   },

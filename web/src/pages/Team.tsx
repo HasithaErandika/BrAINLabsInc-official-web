@@ -1,124 +1,122 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { team } from '@/data/team';
-import type { TeamMember } from '@/data/team';
 import { CollaborationIcon } from '@/components/ui/PageIcons';
-import { Mail, Linkedin, Globe, UserPlus } from 'lucide-react';
+import { Mail, Globe, UserPlus, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/shared/SEO';
+import { api, type PublicResearcher } from '@/lib/api';
 
 // ── Shared card component ─────────────────────────────────────────────────────
-const MemberCard = ({ member, idx, past = false }: { member: TeamMember; idx: number; past?: boolean }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: idx * 0.07, duration: 0.5 }}
-        whileHover={{ y: -5 }}
-    >
-        <Card className={`h-full border-border/50 hover:shadow-lg transition-all duration-300 group ${past ? 'bg-card/40' : 'bg-card/80 hover:border-primary/40'}`}>
-            <CardHeader className="pb-3 pt-6 px-6">
-                <div className="flex items-start gap-4">
-                    {/* Avatar */}
-                    <div className="shrink-0">
-                        {member.image ? (
-                            <img
-                                src={member.image}
-                                alt={member.name}
-                                className={`w-16 h-16 rounded-2xl object-cover ring-2 transition-all duration-300 ${past ? 'ring-border group-hover:ring-primary/40' : 'ring-border group-hover:ring-primary/40'}`}
-                            />
-                        ) : (
-                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ring-1 ring-border transition-all ${past ? 'bg-gradient-to-br from-primary/10 to-primary/5 group-hover:ring-primary/30' : 'bg-gradient-to-br from-primary/15 to-primary/5 group-hover:ring-primary/30'}`}>
-                                <span className={`text-xl font-bold ${past ? 'text-muted-foreground/60' : 'text-primary/80'}`}>
-                                    {member.name.split(' ').map(n => n[0]).join('')}
-                                </span>
+const MemberCard = ({ researcher, idx }: { researcher: PublicResearcher; idx: number }) => {
+    const name = `${researcher.member.first_name} ${researcher.member.second_name}`;
+    const initials = `${researcher.member.first_name[0]}${researcher.member.second_name[0]}`;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: idx * 0.07, duration: 0.5 }}
+            whileHover={{ y: -5 }}
+        >
+            <Card className="h-full border-border/50 hover:shadow-lg transition-all duration-300 group bg-card/80 hover:border-primary/40">
+                <CardHeader className="pb-3 pt-6 px-6">
+                    <div className="flex items-start gap-4">
+                        {/* Avatar */}
+                        <div className="shrink-0">
+                            {researcher.image_url ? (
+                                <img
+                                    src={researcher.image_url}
+                                    alt={name}
+                                    className="w-16 h-16 rounded-2xl object-cover ring-2 ring-border group-hover:ring-primary/40 transition-all duration-300"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                />
+                            ) : (
+                                <div className="w-16 h-16 rounded-2xl flex items-center justify-center ring-1 ring-border bg-gradient-to-br from-primary/15 to-primary/5 group-hover:ring-primary/30 transition-all">
+                                    <span className="text-xl font-bold text-primary/80">{initials}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex-1 min-w-0 pt-0.5">
+                            <CardTitle className="text-base font-semibold mb-1 transition-colors leading-snug group-hover:text-primary">
+                                {name}
+                            </CardTitle>
+                            {researcher.occupation && (
+                                <CardDescription className="text-xs font-semibold mb-0.5 uppercase tracking-wide text-primary">
+                                    {researcher.occupation}
+                                </CardDescription>
+                            )}
+                            {researcher.workplace && (
+                                <p className="text-xs text-muted-foreground/80 truncate">{researcher.workplace}</p>
+                            )}
+                        </div>
+                    </div>
+                </CardHeader>
+
+                <CardContent className="px-6 pb-6 space-y-4">
+                    {/* Bio */}
+                    {researcher.bio && (
+                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{researcher.bio}</p>
+                    )}
+
+                    {/* Education badges */}
+                    {researcher.educational_background && researcher.educational_background.length > 0 && (
+                        <div className="space-y-2">
+                            <div className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest">Education</div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {researcher.educational_background.slice(0, 2).map((ed) => (
+                                    <Badge
+                                        key={ed.id}
+                                        variant="secondary"
+                                        className="text-[10px] px-2 py-0.5 font-medium border bg-primary/6 text-foreground/80 border-primary/10"
+                                    >
+                                        {ed.degree}
+                                    </Badge>
+                                ))}
                             </div>
+                        </div>
+                    )}
+
+                    {/* Links */}
+                    <div className="flex gap-4 pt-3 border-t border-border/40">
+                        {researcher.member.contact_email && (
+                            <a
+                                href={`mailto:${researcher.member.contact_email}`}
+                                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                            >
+                                <Mail size={13} />
+                                Email
+                            </a>
+                        )}
+                        {researcher.workplace && (
+                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
+                                <Globe size={13} />
+                                {researcher.country || researcher.workplace}
+                            </span>
                         )}
                     </div>
+                </CardContent>
+            </Card>
+        </motion.div>
+    );
+};
 
-                    <div className="flex-1 min-w-0 pt-0.5">
-                        <CardTitle className={`text-base font-semibold mb-1 transition-colors leading-snug group-hover:text-primary`}>
-                            {member.name}
-                        </CardTitle>
-                        <CardDescription className={`text-xs font-semibold mb-0.5 uppercase tracking-wide text-primary`}>
-                            {member.position}
-                        </CardDescription>
-                        <p className="text-xs text-muted-foreground/80 truncate">{member.university}</p>
-                    </div>
-                </div>
-            </CardHeader>
-
-            <CardContent className="px-6 pb-6 space-y-4">
-                {/* Research Areas */}
-                <div className="space-y-2">
-                    <div className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest">
-                        Research Areas
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                        {[...(member.researchInterests.theoretical || []), ...(member.researchInterests.applied || [])].slice(0, 4).map((interest, i) => (
-                            <Badge
-                                key={i}
-                                variant="secondary"
-                                className={`text-[10px] px-2 py-0.5 font-medium border transition-colors cursor-default bg-primary/6 text-foreground/80 hover:bg-primary/12 hover:text-primary border-primary/10 hover:border-primary/25`}
-                            >
-                                {interest}
-                            </Badge>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Links */}
-                <div className="flex gap-4 pt-3 border-t border-border/40">
-                    {member.contact && (
-                        <a
-                            href={`mailto:${member.contact}`}
-                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors group/link py-0.5"
-                        >
-                            <Mail size={13} className="group-hover/link:scale-110 transition-transform" />
-                            Email
-                        </a>
-                    )}
-                    {member.linkedin && (
-                        <a
-                            href={member.linkedin.startsWith('http') ? member.linkedin : `https://linkedin.com/in/${member.linkedin}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors group/link py-0.5"
-                        >
-                            <Linkedin size={13} className="group-hover/link:scale-110 transition-transform" />
-                            LinkedIn
-                        </a>
-                    )}
-                    {member.website && (
-                        <a
-                            href={member.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors group/link py-0.5"
-                        >
-                            <Globe size={13} className="group-hover/link:scale-110 transition-transform" />
-                            Website
-                        </a>
-                    )}
-                </div>
-            </CardContent>
-        </Card>
-    </motion.div>
-);
-
-// ── Page ────────────────────────────────────────────────────────────────────
+// ── Page ──────────────────────────────────────────────────────────────────────
 export const Team = () => {
-    const rankMember = (pos: string) => {
-        if (/director|principal|pi\b|professor|dr\./i.test(pos)) return 0;
-        if (/supervisor|co-supervisor/i.test(pos)) return 1;
-        return 2;
-    };
+    const [researchers, setResearchers] = useState<PublicResearcher[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const sorted = [...team].sort((a, b) => rankMember(a.position) - rankMember(b.position));
-    const currentMembers = sorted.filter(m => m.status === 'current');
-    const pastMembers = sorted.filter(m => m.status === 'past');
+    useEffect(() => {
+        api.researchers.list()
+            .then(setResearchers)
+            .catch((e) => setError(e.message))
+            .finally(() => setLoading(false));
+    }, []);
 
     return (
         <div className="min-h-screen">
@@ -156,68 +154,66 @@ export const Team = () => {
                             A multidisciplinary team of experts pushing the boundaries of AI and neuroscience research.
                         </p>
 
-                        {/* Team count */}
-                        <div className="mt-6 inline-flex items-center gap-2 text-sm text-muted-foreground">
-                            <span className="font-semibold text-foreground text-base">{currentMembers.length}</span>
-                            <span>active researchers across AI, ML, and neuroscience</span>
-                        </div>
+                        {!loading && !error && (
+                            <div className="mt-6 inline-flex items-center gap-2 text-sm text-muted-foreground">
+                                <span className="font-semibold text-foreground text-base">{researchers.length}</span>
+                                <span>active researchers across AI, ML, and neuroscience</span>
+                            </div>
+                        )}
                     </motion.div>
                 </div>
             </section>
 
-            {/* ── Current Members ───────────────────────────────────── */}
+            {/* ── Members Grid ──────────────────────────────────────── */}
             <section className="py-8 md:py-14">
                 <div className="container mx-auto px-4 lg:pl-8">
-                    <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="flex items-center gap-3 mb-8"
-                    >
-                        <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                        <h2 className="text-xl md:text-2xl font-bold tracking-tight">Current Members</h2>
-                        <span className="ml-1 text-xs text-muted-foreground font-medium bg-primary/8 border border-primary/15 px-2 py-0.5 rounded-full">
-                            {currentMembers.length}
-                        </span>
-                    </motion.div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {currentMembers.map((member, idx) => (
-                            <Link key={member.id} to={`/team/${member.id}`} className="block h-full">
-                                <MemberCard member={member} idx={idx} />
-                            </Link>
-                        ))}
-                    </div>
+                    {loading && (
+                        <div className="flex items-center gap-3 text-muted-foreground py-20 justify-center">
+                            <Loader2 size={20} className="animate-spin text-primary" />
+                            <span className="text-sm">Loading team…</span>
+                        </div>
+                    )}
+
+                    {error && (
+                        <div className="text-center py-20">
+                            <p className="text-destructive text-sm">{error}</p>
+                        </div>
+                    )}
+
+                    {!loading && !error && researchers.length === 0 && (
+                        <div className="text-center py-20">
+                            <CollaborationIcon size={40} className="mx-auto text-muted-foreground/30 mb-4" />
+                            <p className="text-muted-foreground text-sm">No researchers listed yet.</p>
+                        </div>
+                    )}
+
+                    {!loading && !error && researchers.length > 0 && (
+                        <>
+                            <motion.div
+                                initial={{ opacity: 0, y: 16 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                className="flex items-center gap-3 mb-8"
+                            >
+                                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                <h2 className="text-xl md:text-2xl font-bold tracking-tight">Current Members</h2>
+                                <span className="ml-1 text-xs text-muted-foreground font-medium bg-primary/8 border border-primary/15 px-2 py-0.5 rounded-full">
+                                    {researchers.length}
+                                </span>
+                            </motion.div>
+
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                {researchers.map((researcher, idx) => (
+                                    <Link key={researcher.member_id} to={`/team/${researcher.member.slug}`} className="block h-full">
+                                        <MemberCard researcher={researcher} idx={idx} />
+                                    </Link>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
             </section>
-
-            {/* ── Past Members ──────────────────────────────────────── */}
-            {pastMembers.length > 0 && (
-                <section className="py-8 md:py-14 bg-muted/30 border-t border-border/40">
-                    <div className="container mx-auto px-4 lg:pl-8">
-                        <motion.div
-                            initial={{ opacity: 0, y: 16 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className="flex items-center gap-3 mb-8"
-                        >
-                            <span className="w-2 h-2 rounded-full bg-foreground" />
-                            <h2 className="text-xl md:text-2xl font-bold tracking-tight">Former Members</h2>    {/*Changed "Past" to "Former"*/}
-                            <span className="ml-1 text-xs font-medium border border-border/60 px-2 py-0.5 rounded-full">
-                                {pastMembers.length}
-                            </span>
-                        </motion.div>
-
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {pastMembers.map((member, idx) => (
-                                <Link key={member.id} to={`/team/${member.id}`} className="block h-full">
-                                    <MemberCard member={member} idx={idx} past />
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-            )}
 
             {/* ── CTA ──────────────────────────────────────────────── */}
             <section className="py-20 border-t border-border/40">

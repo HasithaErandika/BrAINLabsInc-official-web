@@ -1,13 +1,44 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { pastEvents, upcomingEvents, eventResources } from '@/data/events';
 import { WorkshopCalendarIcon } from '@/components/ui/PageIcons';
-import { ExternalLink, MapPin, Clock } from 'lucide-react';
+import { MapPin, Clock, Calendar, Loader2 } from 'lucide-react';
 import { SEO } from '@/components/shared/SEO';
+import { api, type PublicEvent } from '@/lib/api';
 
 export const Events = () => {
+    const [events, setEvents] = useState<PublicEvent[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        api.events.list()
+            .then(setEvents)
+            .catch((e) => setError(e.message))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const now = new Date();
+
+    // Split by event_datetime — backend orders ascending
+    const upcomingEvents = events.filter(e => {
+        if (!e.event_datetime) return false;
+        return new Date(e.event_datetime) >= now;
+    });
+    const pastEvents = events.filter(e => {
+        if (!e.event_datetime) return true; // no date → treat as past
+        return new Date(e.event_datetime) < now;
+    });
+
+    const formatEventDate = (datetime: string | null) => {
+        if (!datetime) return 'Date TBD';
+        const d = new Date(datetime);
+        const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        return `${dateStr} · ${timeStr}`;
+    };
+
     return (
         <div className="min-h-screen">
             <SEO
@@ -44,28 +75,50 @@ export const Events = () => {
                             Join us for workshops, seminars, and collaborative events exploring the latest in AI research.
                         </p>
 
-                        {/* Stats row */}
-                        <div className="mt-6 flex items-center gap-6">
-                            {upcomingEvents.length > 0 && (
-                                <>
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-2xl font-bold text-primary">{upcomingEvents.length}</span>
-                                        <span className="text-xs text-muted-foreground uppercase tracking-wide">Upcoming</span>
-                                    </div>
-                                    <div className="w-px h-6 bg-border" />
-                                </>
-                            )}
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-2xl font-bold text-foreground">{pastEvents.length}</span>
-                                <span className="text-xs text-muted-foreground uppercase tracking-wide">Past Events</span>
+                        {!loading && !error && (
+                            <div className="mt-6 flex items-center gap-6">
+                                {upcomingEvents.length > 0 && (
+                                    <>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-2xl font-bold text-primary">{upcomingEvents.length}</span>
+                                            <span className="text-xs text-muted-foreground uppercase tracking-wide">Upcoming</span>
+                                        </div>
+                                        <div className="w-px h-6 bg-border" />
+                                    </>
+                                )}
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-2xl font-bold text-foreground">{pastEvents.length}</span>
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wide">Past Events</span>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </motion.div>
                 </div>
             </section>
 
-            {/* ── Upcoming Events ──────────────────────────────────── */}
-            {upcomingEvents.length > 0 && (
+            {/* ── Loading / Error states ────────────────────────────── */}
+            {loading && (
+                <div className="flex items-center gap-3 text-muted-foreground py-20 justify-center">
+                    <Loader2 size={20} className="animate-spin text-primary" />
+                    <span className="text-sm">Loading events…</span>
+                </div>
+            )}
+
+            {error && (
+                <div className="text-center py-20">
+                    <p className="text-destructive text-sm">{error}</p>
+                </div>
+            )}
+
+            {!loading && !error && events.length === 0 && (
+                <div className="text-center py-20">
+                    <WorkshopCalendarIcon size={40} className="mx-auto text-muted-foreground/30 mb-4" />
+                    <p className="text-muted-foreground text-sm">No events available yet.</p>
+                </div>
+            )}
+
+            {/* ── Upcoming Events ───────────────────────────────────── */}
+            {!loading && !error && upcomingEvents.length > 0 && (
                 <section className="py-10 md:py-14">
                     <div className="container mx-auto px-4 lg:pl-8">
                         <motion.div
@@ -83,77 +136,54 @@ export const Events = () => {
 
                         <div className="grid md:grid-cols-2 gap-6 max-w-5xl">
                             {upcomingEvents.map((event, idx) => (
-                                <EventCard key={idx} event={event} index={idx} upcoming />
+                                <EventCard key={event.id} event={event} index={idx} upcoming formatDate={formatEventDate} />
                             ))}
                         </div>
                     </div>
                 </section>
             )}
 
-            {/* ── Past Events ──────────────────────────────────────── */}
-            <section className={`py-10 md:py-14 ${upcomingEvents.length > 0 ? 'border-t border-border/40 bg-muted/20' : ''}`}>
-                <div className="container mx-auto px-4 lg:pl-8">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="mb-8"
-                    >
-                        <div className="flex items-center gap-3 mb-1">
-                            <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
-                            <h2 className="text-xl md:text-2xl font-bold tracking-tight">Past Events</h2>
-                        </div>
-                        <p className="text-sm text-muted-foreground ml-5">Explore our previous workshops and resources.</p>
-                    </motion.div>
-
-                    <div className="grid md:grid-cols-2 gap-5 max-w-5xl">
-                        {pastEvents.map((event, idx) => (
-                            <EventCard key={idx} event={event} index={idx} />
-                        ))}
-                    </div>
-
-                    {/* Resources CTA */}
-                    {eventResources && (
+            {/* ── Past Events ───────────────────────────────────────── */}
+            {!loading && !error && pastEvents.length > 0 && (
+                <section className={`py-10 md:py-14 ${upcomingEvents.length > 0 ? 'border-t border-border/40 bg-muted/20' : ''}`}>
+                    <div className="container mx-auto px-4 lg:pl-8">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            className="mt-12 max-w-2xl"
+                            className="mb-8"
                         >
-                            <Card className="bg-gradient-to-br from-primary/8 to-primary/4 border-primary/20 hover:border-primary/35 transition-colors">
-                                <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
-                                    <div className="space-y-1.5">
-                                        <h3 className="font-semibold text-foreground flex items-center gap-2.5">
-                                            <div className="p-1.5 bg-primary/15 rounded-lg">
-                                                <ExternalLink size={14} className="text-primary" />
-                                            </div>
-                                            {eventResources.title}
-                                        </h3>
-                                        <p className="text-sm text-muted-foreground leading-relaxed pl-8">
-                                            {eventResources.description}
-                                        </p>
-                                    </div>
-                                    <Button variant="outline" size="sm" className="shrink-0 border-primary/30 hover:bg-primary/10 hover:border-primary/50 rounded-full px-5" asChild>
-                                        <a href={eventResources.link} target="_blank" rel="noopener noreferrer" className="gap-2">
-                                            Access Resources
-                                            <ExternalLink size={12} />
-                                        </a>
-                                    </Button>
-                                </CardContent>
-                            </Card>
+                            <div className="flex items-center gap-3 mb-1">
+                                <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                                <h2 className="text-xl md:text-2xl font-bold tracking-tight">Past Events</h2>
+                            </div>
+                            <p className="text-sm text-muted-foreground ml-5">Explore our previous workshops and events.</p>
                         </motion.div>
-                    )}
-                </div>
-            </section>
+
+                        <div className="grid md:grid-cols-2 gap-5 max-w-5xl">
+                            {pastEvents.map((event, idx) => (
+                                <EventCard key={event.id} event={event} index={idx} formatDate={formatEventDate} />
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            )}
         </div>
     );
 };
 
-const EventCard = ({ event, index, upcoming = false }: {
-    event: typeof pastEvents[0],
-    index: number,
-    upcoming?: boolean
+// ── Event Card ─────────────────────────────────────────────────────────────────
+
+const EventCard = ({ event, index, upcoming = false, formatDate }: {
+    event: PublicEvent;
+    index: number;
+    upcoming?: boolean;
+    formatDate: (datetime: string | null) => string;
 }) => {
+    const hostName = event.researcher
+        ? `${event.researcher.member.first_name} ${event.researcher.member.second_name}`
+        : event.host ?? 'BrAIN Labs';
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -162,14 +192,21 @@ const EventCard = ({ event, index, upcoming = false }: {
             transition={{ delay: index * 0.09, duration: 0.5 }}
             whileHover={{ y: -4 }}
         >
-            <Card className={`h-full transition-all duration-300 group flex flex-col hover:shadow-md ${upcoming ? 'border-primary/30 bg-primary/4 hover:border-primary/50' : 'border-border/50 bg-card/80 hover:border-primary/30'}`}>
+            <Card className={`h-full transition-all duration-300 group flex flex-col hover:shadow-md ${upcoming
+                ? 'border-primary/30 bg-primary/4 hover:border-primary/50'
+                : 'border-border/50 bg-card/80 hover:border-primary/30'
+            }`}>
                 <CardHeader className="pb-3 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                         <Badge
                             variant="secondary"
-                            className={`text-[10px] px-2.5 py-0.5 font-semibold uppercase tracking-wider rounded-full ${upcoming ? 'bg-primary/15 text-primary border border-primary/25' : 'bg-muted text-muted-foreground'}`}
+                            className={`text-[10px] px-2.5 py-0.5 font-semibold uppercase tracking-wider rounded-full ${
+                                upcoming
+                                    ? 'bg-primary/15 text-primary border border-primary/25'
+                                    : 'bg-muted text-muted-foreground'
+                            }`}
                         >
-                            {event.type || 'Event'}
+                            Event
                         </Badge>
                         {upcoming && (
                             <div className="flex items-center gap-1.5">
@@ -185,31 +222,31 @@ const EventCard = ({ event, index, upcoming = false }: {
                         <CardTitle className="text-lg font-bold leading-snug group-hover:text-primary transition-colors">
                             {event.title}
                         </CardTitle>
-                        <CardDescription className="flex items-start gap-2 text-sm">
-                            <MapPin size={13} className="shrink-0 text-muted-foreground mt-0.5" />
-                            <span>{event.description}</span>
-                        </CardDescription>
+                        {event.description && (
+                            <CardDescription className="flex items-start gap-2 text-sm">
+                                <MapPin size={13} className="shrink-0 text-muted-foreground mt-0.5" />
+                                <span className="line-clamp-2">{event.description}</span>
+                            </CardDescription>
+                        )}
                     </div>
                 </CardHeader>
 
                 <CardContent className="pt-0 mt-auto">
-                    <div className="pt-4 border-t border-border/50 flex items-center justify-between gap-4">
+                    <div className="pt-4 border-t border-border/50 space-y-2">
                         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                             <Clock size={13} className="text-primary/60" />
-                            {event.date}
+                            {formatDate(event.event_datetime)}
                         </div>
-
-                        {event.link && (
-                            <a
-                                href={event.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs font-semibold text-primary hover:text-primary/80 flex items-center gap-1 group/link transition-colors"
-                            >
-                                View Details
-                                <ExternalLink size={10} className="group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
-                            </a>
+                        {event.premises && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <MapPin size={13} className="text-primary/60" />
+                                {event.premises}
+                            </div>
                         )}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Calendar size={13} className="text-primary/60" />
+                            Hosted by {hostName}
+                        </div>
                     </div>
                 </CardContent>
             </Card>
