@@ -1,4 +1,5 @@
-import { useRef, useCallback, useEffect, useState } from "react";
+/* eslint-disable react-hooks/refs */
+import { useRef, useCallback, useEffect, useState, useMemo } from "react";
 import {
   Bold, Italic, Code, Heading1, Heading2, Heading3,
   List, ListOrdered, Quote, Minus, Link2, Eye, Edit3,
@@ -110,51 +111,54 @@ export function MarkdownEditor({
     setLineCount((value || "").split("\n").length);
   }, [value]);
 
-  const ta = () => textareaRef.current!;
-
-  const toolbar = [
+  const toolbar = useMemo(() => [
     {
       group: "heading",
       items: [
-        { icon: Heading1, label: "H1", action: () => prependLine(ta(), value, onChange, "# ") },
-        { icon: Heading2, label: "H2", action: () => prependLine(ta(), value, onChange, "## ") },
-        { icon: Heading3, label: "H3", action: () => prependLine(ta(), value, onChange, "### ") },
+        { icon: Heading1, label: "H1", action: () => prependLine(textareaRef.current!, value, onChange, "# ") },
+        { icon: Heading2, label: "H2", action: () => prependLine(textareaRef.current!, value, onChange, "## ") },
+        { icon: Heading3, label: "H3", action: () => prependLine(textareaRef.current!, value, onChange, "### ") },
       ],
     },
     {
       group: "inline",
       items: [
-        { icon: Bold,   label: "Bold",   action: () => wrap(ta(), value, onChange, "**", "**", "bold text") },
-        { icon: Italic, label: "Italic", action: () => wrap(ta(), value, onChange, "*", "*", "italic text") },
-        { icon: Code,   label: "Code",   action: () => wrap(ta(), value, onChange, "`", "`", "code") },
+        { icon: Bold, label: "Bold", action: () => wrap(textareaRef.current!, value, onChange, "**", "**", "bold text") },
+        { icon: Italic, label: "Italic", action: () => wrap(textareaRef.current!, value, onChange, "*", "*", "italic text") },
+        { icon: Code, label: "Code", action: () => wrap(textareaRef.current!, value, onChange, "`", "`", "code") },
       ],
     },
     {
       group: "block",
       items: [
-        { icon: List,         label: "Bullet list", action: () => prependLine(ta(), value, onChange, "- ") },
-        { icon: ListOrdered,  label: "Ordered list",action: () => prependLine(ta(), value, onChange, "1. ") },
-        { icon: Quote,        label: "Blockquote",  action: () => prependLine(ta(), value, onChange, "> ") },
-        { icon: Minus,        label: "Divider",     action: () => {
-          const { selectionStart: s } = ta();
-          const newVal = value.slice(0, s) + "\n\n---\n\n" + value.slice(s);
-          onChange(newVal);
-        }},
+        { icon: List, label: "Bullet list", action: () => prependLine(textareaRef.current!, value, onChange, "- ") },
+        { icon: ListOrdered, label: "Ordered list", action: () => prependLine(textareaRef.current!, value, onChange, "1. ") },
+        { icon: Quote, label: "Blockquote", action: () => prependLine(textareaRef.current!, value, onChange, "> ") },
+        {
+          icon: Minus, label: "Divider", action: () => {
+            const { selectionStart: s } = textareaRef.current!;
+            const newVal = value.slice(0, s) + "\n\n---\n\n" + value.slice(s);
+            onChange(newVal);
+          }
+        },
       ],
     },
     {
       group: "misc",
       items: [
-        { icon: Link2, label: "Link", action: () => wrap(ta(), value, onChange, "[", "](url)", "link text") },
-        { icon: CornerDownLeft, label: "Line break", action: () => {
-          const { selectionStart: s } = ta();
-          const newVal = value.slice(0, s) + "\n" + value.slice(s);
-          onChange(newVal);
-          requestAnimationFrame(() => { ta().focus(); ta().setSelectionRange(s + 1, s + 1); });
-        }},
+        { icon: Link2, label: "Link", action: () => wrap(textareaRef.current!, value, onChange, "[", "](url)", "link text") },
+        {
+          icon: CornerDownLeft, label: "Line break", action: () => {
+            const ta = textareaRef.current!;
+            const { selectionStart: s } = ta;
+            const newVal = value.slice(0, s) + "\n" + value.slice(s);
+            onChange(newVal);
+            requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(s + 1, s + 1); });
+          }
+        },
       ],
     },
-  ];
+  ], [value, onChange]);
 
   // Enhanced Tab key handling
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -163,7 +167,10 @@ export function MarkdownEditor({
       const { selectionStart: s, selectionEnd: end } = e.currentTarget;
       const newVal = value.slice(0, s) + "  " + value.slice(end);
       onChange(newVal);
-      requestAnimationFrame(() => { ta().focus(); ta().setSelectionRange(s + 2, s + 2); });
+      requestAnimationFrame(() => { 
+        textareaRef.current?.focus(); 
+        textareaRef.current?.setSelectionRange(s + 2, s + 2); 
+      });
     }
   }, [value, onChange]);
 
@@ -181,22 +188,20 @@ export function MarkdownEditor({
           <button
             type="button"
             onClick={() => setMode("write")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              mode === "write"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${mode === "write"
                 ? "bg-white text-zinc-900 shadow-sm border border-zinc-200"
                 : "text-zinc-500 hover:text-zinc-700"
-            }`}
+              }`}
           >
             <Edit3 size={12} /> Write
           </button>
           <button
             type="button"
             onClick={() => setMode("preview")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              mode === "preview"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${mode === "preview"
                 ? "bg-white text-zinc-900 shadow-sm border border-zinc-200"
                 : "text-zinc-500 hover:text-zinc-700"
-            }`}
+              }`}
           >
             <Eye size={12} /> Preview
           </button>
@@ -308,11 +313,11 @@ function MarkdownPreview({ source }: { source: string }) {
     const line = lines[i];
 
     if (/^#{1,6} /.test(line)) {
-      const level = (line.match(/^#+/)![0].length) as 1|2|3|4|5|6;
+      const level = (line.match(/^#+/)![0].length) as 1 | 2 | 3 | 4 | 5 | 6;
       const text = line.replace(/^#+\s/, "");
-      const headingTags: Record<number, React.ElementType> = { 1:'h1', 2:'h2', 3:'h3', 4:'h4', 5:'h5', 6:'h6' };
+      const headingTags: Record<number, React.ElementType> = { 1: 'h1', 2: 'h2', 3: 'h3', 4: 'h4', 5: 'h5', 6: 'h6' };
       const Tag = headingTags[level] ?? 'p';
-      const sizeClass = ['','text-2xl font-black','text-xl font-bold','text-lg font-bold','text-base font-semibold','text-sm font-semibold','text-sm font-medium'][level] ?? '';
+      const sizeClass = ['', 'text-2xl font-black', 'text-xl font-bold', 'text-lg font-bold', 'text-base font-semibold', 'text-sm font-semibold', 'text-sm font-medium'][level] ?? '';
       elements.push(<Tag key={i} className={`text-zinc-900 mt-4 mb-1 ${sizeClass}`}>{text}</Tag>);
     } else if (/^---$/.test(line)) {
       elements.push(<hr key={i} className="my-6 border-zinc-200" />);
@@ -377,8 +382,8 @@ function inlineFormat(text: string): React.ReactNode {
   const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g);
   return parts.map((part, i) => {
     if (/^\*\*(.+)\*\*$/.test(part)) return <strong key={i}>{part.slice(2, -2)}</strong>;
-    if (/^\*(.+)\*$/.test(part))   return <em key={i}>{part.slice(1, -1)}</em>;
-    if (/^`(.+)`$/.test(part))     return <code key={i} className="bg-zinc-100 text-zinc-800 rounded px-1.5 py-0.5 text-[0.82em] font-mono">{part.slice(1, -1)}</code>;
+    if (/^\*(.+)\*$/.test(part)) return <em key={i}>{part.slice(1, -1)}</em>;
+    if (/^`(.+)`$/.test(part)) return <code key={i} className="bg-zinc-100 text-zinc-800 rounded px-1.5 py-0.5 text-[0.82em] font-mono">{part.slice(1, -1)}</code>;
     const linkMatch = part.match(/^\[(.+)\]\((.+)\)$/);
     if (linkMatch) return <a key={i} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" className="underline text-zinc-700 hover:text-zinc-900">{linkMatch[1]}</a>;
     return part;

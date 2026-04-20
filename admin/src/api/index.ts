@@ -27,7 +27,7 @@ export function setAuthToken(token: string | null) {
 // ── Request interceptor — attach Bearer token ────────────────────────────────
 apiClient.interceptors.request.use((config) => {
   let token = _authToken;
-  
+
   // Hard fallback to localStorage to survive Vite HMR clearing module variables
   // seamlessly avoiding circular dependencies with useAuth.ts
   if (!token) {
@@ -36,7 +36,7 @@ apiClient.interceptors.request.use((config) => {
       if (persisted) {
         token = JSON.parse(persisted).state?.token;
       }
-    } catch (e) {
+    } catch {
       // ignore parse errors
     }
   }
@@ -84,7 +84,7 @@ export const api = {
     myAssistants: () => apiClient.get<any[]>('/me/my-assistants').then(data),
     removeAssistant: (raId: number) => apiClient.delete(`/me/my-assistants/${raId}`).then(data),
     availableAssistants: (q?: string) => apiClient.get<any[]>(`/me/available-assistants${q ? `?q=${encodeURIComponent(q)}` : ''}`).then(data),
-    assignAssistant: (ra_member_id: number, research_id?: number) => 
+    assignAssistant: (ra_member_id: number, research_id?: number) =>
       apiClient.post('/me/my-assistants', { ra_member_id, research_id }).then(data),
   },
   admin: {
